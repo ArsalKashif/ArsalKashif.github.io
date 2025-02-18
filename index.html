@@ -10,7 +10,7 @@
             text-align: center;
             padding: 50px;
         }
-        #timer {
+        #current-time, #timer {
             font-size: 24px;
             font-weight: bold;
         }
@@ -18,12 +18,13 @@
 </head>
 <body>
     <h1>Schedule Timer</h1>
+    <p id="current-time">Loading current time...</p>
     <p id="timer">Loading...</p>
 
     <script>
         function updateTimer() {
             let t = new Date();
-            let UTC = 0;
+            let UTC = -6;
             let d = t.getUTCDay();
             let h = (t.getUTCHours() + UTC + 24) % 24;
             let m = t.getUTCMinutes();
@@ -40,6 +41,8 @@
                 return `${h}h ${m}min ${s}sec`;
             }
 
+            document.getElementById("current-time").innerText = `Current Time: ${h}:${m}:${s}`;
+            
             let times = [];
             let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
 
