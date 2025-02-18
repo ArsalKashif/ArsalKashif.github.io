@@ -3,34 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Clock</title>
+    <title>Time Left for Classes</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
         }
-        #clock {
-            font-size: 2em;
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .time-left {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .next-class {
+            font-size: 18px;
+            color: #555;
         }
     </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
-    <div id="clock"></div>
 
-    <script>
-        function updateTime() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            const timeString = `${hours}:${minutes}:${seconds}`;
-            document.getElementById('clock').textContent = timeString;
+<div class="container">
+    <h1>Time Left for Next Class</h1>
+    <div class="time-left">
+        <p id="time"></p>
+    </div>
+    <div class="next-class">
+        <p id="next-class"></p>
+    </div>
+</div>
+
+<script>
+    // Current Date and Time Setup
+    let t = new Date();
+    let UTC = -6;  // Timezone adjustment
+    let d = t.getDay();  // 0 -> Sunday, 1 -> Monday, etc.
+    let h = t.getHours();
+    let m = t.getMinutes();
+    let s = t.getSeconds();
+    let now = cs(h, m, s);
+
+    // Convert time to seconds
+    function cs(h, m, s) {
+        return h * 3600 + m * 60 + s;
+    }
+
+    function ct(ts) {
+        let h = Math.floor(ts / 3600);
+        let m = Math.floor((ts - h * 3600) / 60);
+        let s = Math.floor(ts - h * 3600 - m * 60);
+        return [h, m, s];
+    }
+
+    // Times setup for class schedule (Tuesdays and Thursdays)
+    let times = [];
+
+    // TUES and THURS
+    if (d == 2 || d == 4) {
+        for (let i = cs(7, 45, 0); i <= cs(15, 10, 0); i += 0) {
+            times.push(i);
+            i += 45 * 60;  // Class duration (45 minutes)
+            times.push(i);
+            i += 5 * 60;  // Passing time (5 minutes)
         }
+    }
 
-        setInterval(updateTime, 1000);
-        updateTime(); // Call once immediately to show the time right away
-    </script>
+    let tl; // Time left
+
+    // Loop to check for the next class time
+    for (let i = 17; i > -1; i--) {
+        if (now > times[i - 1]) tl = times[i] - now;
+        if (tl >= 0) {
+            let timeLeft = ct(tl);
+            let timeText = `Time left: ${timeLeft[0]}h ${timeLeft[1]}m ${timeLeft[2]}s`;
+            let nextClass = `Next class in ${timeText}`;
+            document.getElementById("time").innerText = timeText;
+            document.getElementById("next-class").innerText = nextClass;
+            break;
+        }
+    }
+
+</script>
+
 </body>
 </html>
