@@ -6,9 +6,18 @@
     <title>Schedule Timer</title>
     <style>
         body {
+            background-color: black;
+            color: white;
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
+        }
+        .container {
+            background-color: gray;
+            border: 2px solid white;
+            padding: 20px;
+            display: inline-block;
+            border-radius: 10px;
         }
         #current-time, #timer {
             font-size: 24px;
@@ -17,9 +26,11 @@
     </style>
 </head>
 <body>
-    <h1>Schedule Timer</h1>
-    <p id="current-time">Loading current time...</p>
-    <p id="timer">Loading...</p>
+    <div class="container">
+        <h1>Schedule Timer</h1>
+        <p id="current-time">Loading current time...</p>
+        <p id="timer">Loading...</p>
+    </div>
 
     <script>
         function updateTimer() {
@@ -31,6 +42,9 @@
             let s = t.getUTCSeconds();
             let now = cs(h, m, s);
 
+            function pad(num) {
+                return num.toString().padStart(2, '0');
+            }
             function cs(h, m, s) {
                 return h * 3600 + m * 60 + s;
             }
@@ -41,7 +55,7 @@
                 return `${h}h ${m}min ${s}sec`;
             }
 
-            document.getElementById("current-time").innerText = `Current Time: ${h}:${m}:${s}`;
+            document.getElementById("current-time").innerText = `Current Time: ${pad(h)}:${pad(m)}:${pad(s)}`;
             
             let times = [];
             let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
