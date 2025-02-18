@@ -3,105 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Left for Classes</title>
+    <title>Schedule Timer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-            margin: 0;
-        }
-
-        .container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
+            padding: 50px;
         }
-
-        h1 {
-            margin-bottom: 10px;
-        }
-
-        .time-left {
+        #timer {
             font-size: 24px;
             font-weight: bold;
-            color: #333;
-        }
-
-        .next-class {
-            font-size: 18px;
-            color: #555;
         }
     </style>
 </head>
 <body>
+    <h1>Schedule Timer</h1>
+    <p id="timer">Loading...</p>
 
-<div class="container">
-    <h1>Time Left for Next Class</h1>
-    <div class="time-left">
-        <p id="time"></p>
-    </div>
-    <div class="next-class">
-        <p id="next-class"></p>
-    </div>
-</div>
+    <script>
+        function updateTimer() {
+            let t = new Date();
+            let UTC = 0;
+            let d = t.getUTCDay();
+            let h = (t.getUTCHours() + UTC + 24) % 24;
+            let m = t.getUTCMinutes();
+            let s = t.getUTCSeconds();
+            let now = cs(h, m, s);
 
-<script>
-    // Current Date and Time Setup
-    let t = new Date();
-    let UTC = -6;  // Timezone adjustment
-    let d = t.getDay();  // 0 -> Sunday, 1 -> Monday, etc.
-    let h = t.getHours();
-    let m = t.getMinutes();
-    let s = t.getSeconds();
-    let now = cs(h, m, s);
+            function cs(h, m, s) {
+                return h * 3600 + m * 60 + s;
+            }
+            function ct(ts) {
+                let h = Math.floor(ts / 3600);
+                let m = Math.floor((ts % 3600) / 60);
+                let s = ts % 60;
+                return `${h}h ${m}min ${s}sec`;
+            }
 
-    // Convert time to seconds
-    function cs(h, m, s) {
-        return h * 3600 + m * 60 + s;
-    }
+            let times = [];
+            let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
 
-    function ct(ts) {
-        let h = Math.floor(ts / 3600);
-        let m = Math.floor((ts - h * 3600) / 60);
-        let s = Math.floor(ts - h * 3600 - m * 60);
-        return [h, m, s];
-    }
+            for (let i = startTime; i <= cs(15, 10, 0); ) {
+                if (d === 1 || d === 5) {
+                    times.push(i);
+                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
+                    times.push(i);
+                    i += 6 * 60;
+                } else if (d === 3) {
+                    times.push(i);
+                    i += 42 * 60;
+                    times.push(i);
+                    i += 5 * 60;
+                } else if (d === 2 || d === 4) {
+                    times.push(i);
+                    i += 45 * 60;
+                    times.push(i);
+                    i += 5 * 60;
+                }
+            }
 
-    // Times setup for class schedule (Tuesdays and Thursdays)
-    let times = [];
-
-    // TUES and THURS
-    if (d == 2 || d == 4) {
-        for (let i = cs(7, 45, 0); i <= cs(15, 10, 0); i += 0) {
-            times.push(i);
-            i += 45 * 60;  // Class duration (45 minutes)
-            times.push(i);
-            i += 5 * 60;  // Passing time (5 minutes)
+            let tl = "Unknown";
+            if (d === 0 || d === 6) {
+                tl = "Weekend!";
+            } else if (now > cs(15, 10, 0)) {
+                tl = `Since end: ${ct(now - cs(15, 10, 0))}`;
+            } else if (now < cs(7, 45, 0)) {
+                tl = `Till start: ${ct(cs(7, 45, 0) - now)}`;
+            } else {
+                for (let i = 0; i < times.length; i++) {
+                    if (now < times[i]) {
+                        tl = `Till end: ${ct(times[i] - now)}`;
+                        break;
+                    }
+                }
+            }
+            document.getElementById("timer").innerText = tl;
         }
-    }
 
-    let tl; // Time left
-
-    // Loop to check for the next class time
-    for (let i = 17; i > -1; i--) {
-        if (now > times[i - 1]) tl = times[i] - now;
-        if (tl >= 0) {
-            let timeLeft = ct(tl);
-            let timeText = `Time left: ${timeLeft[0]}h ${timeLeft[1]}m ${timeLeft[2]}s`;
-            let nextClass = `Next class in ${timeText}`;
-            document.getElementById("time").innerText = timeText;
-            document.getElementById("next-class").innerText = nextClass;
-            break;
-        }
-    }
-
-</script>
-
+        updateTimer(); // Run initially
+        setInterval(updateTimer, 1000); // Update every second
+    </script>
 </body>
 </html>
