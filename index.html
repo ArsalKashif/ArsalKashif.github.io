@@ -19,7 +19,7 @@
             display: inline-block;
             border-radius: 10px;
         }
-        #current-time, #timer {
+        #current-time, #timer, #current-period {
             font-size: 24px;
             font-weight: bold;
         }
@@ -29,6 +29,7 @@
     <div class="container">
         <h1>Schedule Timer</h1>
         <p id="current-time">Loading current time...</p>
+        <p id="current-period">Loading current period...</p>
         <p id="timer">Loading...</p>
     </div>
 
@@ -59,42 +60,57 @@
             
             let times = [];
             let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
-
+            let periodNames = [];
+            
             for (let i = startTime; i <= cs(15, 10, 0); ) {
                 if (d === 1 || d === 5) {
                     times.push(i);
+                    periodNames.push("Period " + (times.length));
                     i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
                     times.push(i);
+                    periodNames.push("Passing Period");
                     i += 6 * 60;
                 } else if (d === 3) {
                     times.push(i);
+                    periodNames.push("Period " + (times.length));
                     i += 42 * 60;
                     times.push(i);
+                    periodNames.push("Passing Period");
                     i += 5 * 60;
                 } else if (d === 2 || d === 4) {
                     times.push(i);
+                    periodNames.push("Period " + (times.length));
                     i += 45 * 60;
                     times.push(i);
+                    periodNames.push("Passing Period");
                     i += 5 * 60;
                 }
             }
 
             let tl = "Unknown";
+            let currentPeriod = "Unknown";
+            
             if (d === 0 || d === 6) {
                 tl = "Weekend!";
+                currentPeriod = "No School";
             } else if (now > cs(15, 10, 0)) {
                 tl = `Since end: ${ct(now - cs(15, 10, 0))}`;
+                currentPeriod = "School Ended";
             } else if (now < cs(7, 45, 0)) {
                 tl = `Till start: ${ct(cs(7, 45, 0) - now)}`;
+                currentPeriod = "Before School";
             } else {
                 for (let i = 0; i < times.length; i++) {
                     if (now < times[i]) {
                         tl = `Till end: ${ct(times[i] - now)}`;
+                        currentPeriod = periodNames[i - 1] || "Unknown";
                         break;
                     }
                 }
             }
+            
             document.getElementById("timer").innerText = tl;
+            document.getElementById("current-period").innerText = `Current Period: ${currentPeriod}`;
         }
 
         updateTimer(); // Run initially
