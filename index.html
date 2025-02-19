@@ -11,6 +11,16 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
+            overflow: hidden;
+            margin: 0;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
         }
         .container {
             background-color: gray;
@@ -18,6 +28,8 @@
             padding: 20px;
             display: inline-block;
             border-radius: 10px;
+            position: relative;
+            z-index: 1;
         }
         #current-time, #timer {
             font-size: 24px;
@@ -26,6 +38,7 @@
     </style>
 </head>
 <body>
+    <canvas id="matrixCanvas"></canvas>
     <div class="container">
         <h1 id="current-period">Loading...</h1>
         <p id="current-time">Loading current time...</p>
@@ -33,6 +46,38 @@
     </div>
 
     <script>
+        // Matrix Background Effect
+        const canvas = document.getElementById("matrixCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const columns = Math.floor(canvas.width / 20);
+        const drops = Array(columns).fill(0);
+        const characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0F0";
+            ctx.font = "18px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters[Math.floor(Math.random() * characters.length)];
+                ctx.fillText(text, i * 20, drops[i] * 20);
+
+                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 50);
+
+        // Schedule Timer Script
         function updateTimer() {
             let t = new Date();
             let UTC = -6;
@@ -42,13 +87,8 @@
             let s = t.getUTCSeconds();
             let now = cs(h, m, s);
 
-            let ampm = "AM";
-            if (h >= 12)
-                ampm = "PM"
-
-            let mh = h % 12;
-            if (mh == 0)
-                mh = 12;
+            let ampm = h >= 12 ? "PM" : "AM";
+            let mh = h % 12 || 12;
 
             function pad(num) {
                 return num.toString().padStart(2, '0');
@@ -72,14 +112,14 @@
                 if (d === 1 || d === 5) {
                     times.push(i);
                     periodNames.push("Period " + (periodNames.length / 2 + 1));
-                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60; //53 minute for p2, 50 for rest
+                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 6 * 60;
                 } else if (d === 3) {
                     times.push(i);
                     periodNames.push("Period " + (periodNames.length / 2 + 1));
-                    i += i === cs(12, 8, 0) ? 41 * 60 : 42 * 60; //41 minute for p5, 42 for rest
+                    i += i === cs(12, 8, 0) ? 41 * 60 : 42 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
@@ -90,10 +130,10 @@
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
-                    if (periodNames.length === 4) { // After P2, insert SOAR
+                    if (periodNames.length === 4) {
                         times.push(i);
                         periodNames.push("SOAR");
-                        i += 45 * 60; // SOAR duration
+                        i += 45 * 60;
                     }
                 }
             }
@@ -124,8 +164,13 @@
             document.getElementById("current-period").innerText = currentPeriod;
         }
 
-        updateTimer(); // Run initially
-        setInterval(updateTimer, 1000); // Update every second
+        updateTimer();
+        setInterval(updateTimer, 1000);
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
