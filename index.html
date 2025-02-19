@@ -72,14 +72,14 @@
                 if (d === 1 || d === 5) {
                     times.push(i);
                     periodNames.push("Period " + (periodNames.length / 2 + 1));
-                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
+                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60; //53 minute for p2, 50 for rest
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 6 * 60;
                 } else if (d === 3) {
                     times.push(i);
                     periodNames.push("Period " + (periodNames.length / 2 + 1));
-                    i += 42 * 60;
+                    i += i === cs(12, 8, 0) ? 41 * 60 : 42 * 60; //41 minute for p5, 42 for rest
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
@@ -93,7 +93,7 @@
                     if (periodNames.length === 4) { // After P2, insert SOAR
                         times.push(i);
                         periodNames.push("SOAR");
-                        i += 30 * 60; // SOAR duration
+                        i += 45 * 60; // SOAR duration
                     }
                 }
             }
