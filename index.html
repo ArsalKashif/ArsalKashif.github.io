@@ -109,7 +109,7 @@
             } else {
                 for (let i = 0; i < times.length; i++) {
                     if (now < times[i]) {
-                        tl = `Time Left: ${ct(times[i] - now)}`;
+                        tl = `${ct(times[i] - now)} left`;
                         currentPeriod = periodNames[i - 1] || "Unknown";
                         break;
                     }
