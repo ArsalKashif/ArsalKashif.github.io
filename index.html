@@ -59,31 +59,36 @@
             document.getElementById("current-time").innerText = `Current Time: ${pad(h)}:${pad(m)}:${pad(s)}`;
             
             let times = [];
-            let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
             let periodNames = [];
+            let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
             
             for (let i = startTime; i <= cs(15, 10, 0); ) {
                 if (d === 1 || d === 5) {
                     times.push(i);
-                    periodNames.push("Period " + (times.length));
+                    periodNames.push("Period " + (periodNames.length / 2 + 1));
                     i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 6 * 60;
                 } else if (d === 3) {
                     times.push(i);
-                    periodNames.push("Period " + (times.length));
+                    periodNames.push("Period " + (periodNames.length / 2 + 1));
                     i += 42 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
                 } else if (d === 2 || d === 4) {
                     times.push(i);
-                    periodNames.push("Period " + (times.length));
+                    periodNames.push("Period " + (periodNames.length / 2 + 1));
                     i += 45 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
+                    if (periodNames.length === 4) { // After P2, insert SOAR
+                        times.push(i);
+                        periodNames.push("SOAR");
+                        i += 30 * 60; // SOAR duration
+                    }
                 }
             }
 
@@ -96,8 +101,8 @@
             } else if (now > cs(15, 10, 0)) {
                 tl = `Since end: ${ct(now - cs(15, 10, 0))}`;
                 currentPeriod = "School Ended";
-            } else if (now < cs(7, 45, 0)) {
-                tl = `Till start: ${ct(cs(7, 45, 0) - now)}`;
+            } else if (now < startTime) {
+                tl = `Till start: ${ct(startTime - now)}`;
                 currentPeriod = "Before School";
             } else {
                 for (let i = 0; i < times.length; i++) {
