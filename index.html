@@ -19,7 +19,7 @@
             display: inline-block;
             border-radius: 10px;
         }
-        #current-time, #timer, #current-period {
+        #current-time, #timer {
             font-size: 24px;
             font-weight: bold;
         }
@@ -27,9 +27,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>Schedule Timer</h1>
+        <h1 id="current-period">Loading...</h1>
         <p id="current-time">Loading current time...</p>
-        <p id="current-period">Loading current period...</p>
         <p id="timer">Loading...</p>
     </div>
 
@@ -50,10 +49,9 @@
                 return h * 3600 + m * 60 + s;
             }
             function ct(ts) {
-                let h = Math.floor(ts / 3600);
                 let m = Math.floor((ts % 3600) / 60);
                 let s = ts % 60;
-                return `${h}h ${m}min ${s}sec`;
+                return `${m}min ${s}sec`;
             }
 
             document.getElementById("current-time").innerText = `Time: ${pad(h)}:${pad(m)}:${pad(s)}`;
@@ -115,7 +113,7 @@
             }
             
             document.getElementById("timer").innerText = tl;
-            document.getElementById("current-period").innerText = `${currentPeriod}`;
+            document.getElementById("current-period").innerText = currentPeriod;
         }
 
         updateTimer(); // Run initially
