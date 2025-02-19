@@ -56,7 +56,7 @@
                 return `${h}h ${m}min ${s}sec`;
             }
 
-            document.getElementById("current-time").innerText = `Current Time: ${pad(h)}:${pad(m)}:${pad(s)}`;
+            document.getElementById("current-time").innerText = `Time: ${pad(h)}:${pad(m)}:${pad(s)}`;
             
             let times = [];
             let periodNames = [];
@@ -115,7 +115,7 @@
             }
             
             document.getElementById("timer").innerText = tl;
-            document.getElementById("current-period").innerText = `Current Period: ${currentPeriod}`;
+            document.getElementById("current-period").innerText = `${currentPeriod}`;
         }
 
         updateTimer(); // Run initially
