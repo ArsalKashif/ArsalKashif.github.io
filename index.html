@@ -55,12 +55,12 @@
 
         const columns = Math.floor(canvas.width / 20);
         const drops = Array(columns).fill(0);
-        const characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const characters = "膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中Ｚ難金女月弓";
 
         function drawMatrix() {
             ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#0F0";
+            ctx.fillStyle = "#ff0000";
             ctx.font = "18px monospace";
 
             for (let i = 0; i < drops.length; i++) {
@@ -142,10 +142,11 @@
             let currentPeriod = "Unknown";
             
             if (d === 0 || d === 6) {
-                tl = "Weekend!";
-                currentPeriod = "No School";
+                tl = "Enjoy your day!";
+                currentPeriod = "Weekend";
             } else if (now > cs(15, 10, 0)) {
-                tl = `Since end: ${ct(now - cs(15, 10, 0))}`;
+                //tl = `Since end: ${ct(now - cs(15, 10, 0))}`; //only shows the min, sec, needs hours too
+                tl = `Enjoy your day!`;
                 currentPeriod = "School Ended";
             } else if (now < startTime) {
                 tl = `Till start: ${ct(startTime - now)}`;
