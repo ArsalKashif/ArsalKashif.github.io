@@ -46,6 +46,10 @@
             if (h >= 12)
                 ampm = "PM"
 
+            let mh = h % 12;
+            if (mh == 0)
+                mh = 12;
+
             function pad(num) {
                 return num.toString().padStart(2, '0');
             }
@@ -58,7 +62,7 @@
                 return `${m}min ${s}sec`;
             }
 
-            document.getElementById("current-time").innerText = `${pad(h % 12)}:${pad(m)}:${pad(s)} ${ampm}`;
+            document.getElementById("current-time").innerText = `${pad(mh)}:${pad(m)}:${pad(s)} ${ampm}`;
             
             let times = [];
             let periodNames = [];
