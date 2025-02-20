@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Saver</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+        }
+        #savedText {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 80%;
+            display: inline-block;
+            min-height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Save Your Text</h1>
+    <textarea id="textInput" placeholder="Write something..."></textarea><br>
+    <button onclick="saveText()">Save</button>
+    <h2>Saved Text:</h2>
+    <div id="savedText"></div>
+
+    <script>
+        function saveText() {
+            const text = document.getElementById("textInput").value;
+            localStorage.setItem("savedText", text);
+            displayText();
+        }
+        
+        function displayText() {
+            const savedText = localStorage.getItem("savedText") || "No text saved yet.";
+            document.getElementById("savedText").textContent = savedText;
+        }
+        
+        document.addEventListener("DOMContentLoaded", displayText);
+    </script>
+</body>
+</html>
