@@ -24,7 +24,8 @@
         }
         .container {
             background-color: rgba(90, 0, 0, 0.9);
-            border: 1px solid white;
+            border: 5px solid;
+            border-color: rgba(200, 50, 50 , 1);
             padding: 20px;
             display: inline-block;
             border-radius: 20px;
@@ -32,8 +33,11 @@
             z-index: 1;
         }
         #current-time, #timer {
-            font-size: 24px;
+            font-size: 40px;
             font-weight: bold;
+        }
+        #current-period {
+          font-size: 50px;
         }
     </style>
 </head>
@@ -55,7 +59,7 @@
 
         const columns = Math.floor(canvas.width / 20);
         const drops = Array(columns).fill(0);
-        const characters = "膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中Ｚ難金女月弓";
+        const characters = "⏱12345︎67890膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中難金女月弓";
         
         let value = 0;
 
