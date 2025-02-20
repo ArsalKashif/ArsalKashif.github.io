@@ -13,6 +13,10 @@
             padding: 50px;
             overflow: hidden;
             margin: 0;
+            height: 90vh; /* Ensure the body takes the full viewport height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         canvas {
             position: fixed;
@@ -30,7 +34,6 @@
             display: inline-block;
             border-radius: 20px;
             position: relative;
-            z-index: 1;
         }
         #current-time, #timer {
             font-size: 40px;
