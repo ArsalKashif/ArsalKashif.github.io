@@ -122,25 +122,27 @@
             let times = [];
             let periodNames = [];
             let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
+            let j = 0;
             
             for (let i = startTime; i <= cs(15, 10, 0); ) {
+            		j += 1;
                 if (d === 1 || d === 5) {
                     times.push(i);
-                    periodNames.push("Period " + (periodNames.length / 2 + 1));
+                    periodNames.push("Period " + (j));
                     i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 6 * 60;
                 } else if (d === 3) {
                     times.push(i);
-                    periodNames.push("Period " + (periodNames.length / 2 + 1));
+                    periodNames.push("Period " + (j));
                     i += i === cs(12, 8, 0) ? 41 * 60 : 42 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
                 } else if (d === 2 || d === 4) {
                     times.push(i);
-                    periodNames.push("Period " + (periodNames.length / 2 + 1));
+                    periodNames.push("Period " + (j));
                     i += 45 * 60;
                     times.push(i);
                     periodNames.push("Passing Period");
