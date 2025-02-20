@@ -22,6 +22,11 @@
             width: 80%;
             display: inline-block;
             min-height: 50px;
+            text-align: left;
+        }
+        #lastWipe {
+            margin-top: 10px;
+            font-style: italic;
         }
     </style>
 </head>
@@ -31,17 +36,38 @@
     <button onclick="saveText()">Save</button>
     <h2>Saved Text:</h2>
     <div id="savedText"></div>
+    <p id="lastWipe">Date of last wipe: Not wiped yet</p>
 
     <script>
         function saveText() {
-            const text = document.getElementById("textInput").value;
-            localStorage.setItem("savedText", text);
+            const text = document.getElementById("textInput").value.trim();
+            if (text === "") {
+                alert("Text cannot be empty!");
+                return;
+            }
+            if (text.length > 50) {
+                alert("Text cannot be longer than 50 characters!");
+                return;
+            }
+            if (text === "/wipe{all}/") {
+                localStorage.removeItem("savedEntries");
+                let wipeDate = new Date().toLocaleString();
+                localStorage.setItem("lastWipe", wipeDate);
+            } else {
+                let entries = JSON.parse(localStorage.getItem("savedEntries")) || [];
+                let timestamp = new Date().toLocaleString();
+                entries.push(`**Entry ${timestamp}:** ${text}`);
+                localStorage.setItem("savedEntries", JSON.stringify(entries));
+            }
+            document.getElementById("textInput").value = "";
             displayText();
         }
         
         function displayText() {
-            const savedText = localStorage.getItem("savedText") || "No text saved yet.";
-            document.getElementById("savedText").textContent = savedText;
+            const savedEntries = JSON.parse(localStorage.getItem("savedEntries")) || [];
+            document.getElementById("savedText").innerHTML = savedEntries.length > 0 ? savedEntries.join("<br><br>") : "No text saved yet.";
+            const lastWipe = localStorage.getItem("lastWipe") || "Not wiped yet";
+            document.getElementById("lastWipe").textContent = `Date of last wipe: ${lastWipe}`;
         }
         
         document.addEventListener("DOMContentLoaded", displayText);
