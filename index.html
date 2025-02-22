@@ -102,7 +102,7 @@
         function updateTimer() {
             let t = new Date();
             let UTC = -6;
-            let d = t.getUTCDay();
+            let d = t.getDay();
             let h = (t.getUTCHours() + UTC + 24) % 24;
             let m = t.getUTCMinutes();
             let s = t.getUTCSeconds();
