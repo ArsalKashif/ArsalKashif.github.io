@@ -101,9 +101,8 @@
         // Schedule Timer Script
         function updateTimer() {
             let t = new Date();
-            let UTC = -6;
             let d = t.getDay();
-            let h = (t.getUTCHours() + UTC + 24) % 24;
+            let h = t.getHours();
             let m = t.getUTCMinutes();
             let s = t.getUTCSeconds();
             let now = cs(h, m, s);
@@ -146,7 +145,7 @@
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
-                } else if (d === 2 || d === 4) {
+                } else if (d === 2 || d === 4 || d === 6 || d === 0) {
                     times.push(i);
                     periodNames.push("Period " + (j));
                     i += 45 * 60;
