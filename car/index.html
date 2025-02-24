@@ -12,7 +12,7 @@
     </style>
 </head>
 <body>
-    <h1>Car Racing Game</h1>
+    <h1>Car Racing Game 🚗💨</h1>
     <canvas id="gameCanvas" width="400" height="500"></canvas>
     <p>Use <b>Left</b> and <b>Right</b> arrow keys to move!</p>
     <button id="restartButton" onclick="restartGame()">Restart Game</button>
@@ -23,11 +23,13 @@
         const restartButton = document.getElementById("restartButton");
 
         let car, obstacles, gameOver, score, speed, bestScore;
+        let greenObstacles = [];
         bestScore = localStorage.getItem("bestScore") || 0;
 
         function resetGame() {
             car = { x: 180, y: 400, width: 40, height: 60, color: "blue" };
             obstacles = [];
+            greenObstacles = [];
             gameOver = false;
             score = 0;
             speed = 3;
@@ -45,6 +47,10 @@
             obstacles.forEach(obstacle => {
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             });
+            ctx.fillStyle = "green";
+            greenObstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
         }
 
         function updateObstacles() {
@@ -56,11 +62,25 @@
                     if (score % 5 === 0) speed += 0.5;
                 }
             });
+            
+            greenObstacles.forEach(obstacle => {
+                obstacle.y += speed;
+                if (obstacle.y > canvas.height) {
+                    greenObstacles.splice(greenObstacles.indexOf(obstacle), 1);
+                    score = Math.max(0, score - 1);
+                }
+            });
 
             if (Math.random() < 0.02) {
                 let width = Math.random() * 60 + 30;
                 let x = Math.random() * (canvas.width - width);
                 obstacles.push({ x, y: -20, width, height: 20 });
+            }
+            
+            if (Math.random() < 0.01) {
+                let width = Math.random() * 60 + 30;
+                let x = Math.random() * (canvas.width - width);
+                greenObstacles.push({ x, y: -20, width, height: 20 });
             }
         }
 
@@ -71,6 +91,16 @@
                     car.y < obstacle.y + obstacle.height &&
                     car.y + car.height > obstacle.y) {
                     gameOver = true;
+                }
+            });
+            
+            greenObstacles.forEach(obstacle => {
+                if (car.x < obstacle.x + obstacle.width &&
+                    car.x + car.width > obstacle.x &&
+                    car.y < obstacle.y + obstacle.height &&
+                    car.y + car.height > obstacle.y) {
+                    score++;
+                    greenObstacles.splice(greenObstacles.indexOf(obstacle), 1);
                 }
             });
         }
