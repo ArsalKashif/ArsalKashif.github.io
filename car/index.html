@@ -3,28 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Car Racing Game</title>
+    <title>Simple Car Racing</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 2px solid black; }
         h1 { font-family: Arial, sans-serif; }
         button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        .top-right { position: absolute; top: 10px; right: 20px; font-size: 18px; }
     </style>
 </head>
 <body>
-    <h1>Car Racing Game 🚗💨</h1>
+    <h1>Car Racing</h1>
     <canvas id="gameCanvas" width="400" height="500"></canvas>
-    <p>Use <b>Left</b> and <b>Right</b> arrow keys to move! Hold <b>Shift</b> + Arrow key to dash.</p>
+    <p>Shift</b> + Arrow key to dash.</p>
     <p id="dashStatus">Dash Ready</p>
+    <p id="highScore"></p>
+    <p class="top-right">Bricks: <span id="greenBricks">0</span></p>
     <button onclick="restartGame()">Restart</button>
     
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const dashStatus = document.getElementById("dashStatus");
+        const highScoreDisplay = document.getElementById("highScore");
+        const greenBricksDisplay = document.getElementById("greenBricks");
 
-        let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer;
-        
+        let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks;
+
         function init() {
             car = { x: 180, y: 400, width: 40, height: 60, color: "blue" };
             obstacles = [];
@@ -32,8 +37,12 @@
             score = 0;
             speed = 3;
             canDash = true;
-            dashCooldown = 5;
+            dashCooldown = 0.5;
             dashTimer = 0;
+            highestScore = localStorage.getItem("highScore") || 0;
+            greenBricks = localStorage.getItem("greenBricks") || 0;
+            
+            greenBricksDisplay.innerText = greenBricks;
         }
 
         function drawCar() {
@@ -76,10 +85,18 @@
                     car.x + car.width > obstacle.x &&
                     car.y < obstacle.y + obstacle.height &&
                     car.y + car.height > obstacle.y) {
+                    
                     if (obstacle.color === "green") {
                         score++;
+                        greenBricks++;
+                        localStorage.setItem("greenBricks", greenBricks);
+                        greenBricksDisplay.innerText = greenBricks;
                     } else {
                         gameOver = true;
+                        if (score > highestScore) {
+                            highestScore = score;
+                            localStorage.setItem("highScore", highestScore);
+                        }
                     }
                     obstacles.splice(obstacles.indexOf(obstacle), 1);
                 }
@@ -92,11 +109,17 @@
             ctx.fillText("Score: " + score, 10, 30);
         }
 
+        function drawHighScore() {
+            ctx.fillStyle = "yellow";
+            ctx.font = "18px Arial";
+            ctx.fillText("High Score: " + highestScore, 10, 55);
+        }
+
         function updateDashStatus() {
             if (canDash) {
                 dashStatus.innerText = "Dash Ready";
             } else {
-                dashStatus.innerText = "Dash Cooldown: " + dashTimer + "s";
+                dashStatus.innerText = "Dash Cooldown: " + Math.ceil(dashTimer * 1000 / 60) + "ms";
             }
         }
 
@@ -106,9 +129,10 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white";
                 ctx.font = "30px Arial";
-                ctx.fillText("Game Over!", 120, 200);
-                ctx.fillText("Score: " + score, 150, 250);
-                ctx.fillText("Try Again!", 70, 300);
+                ctx.fillText("Game Over!", 110, 200);
+                ctx.fillText("Score: " + score, 140, 250);
+                ctx.fillText("Try Again!", 130, 300);
+                highScoreDisplay.innerText = "Highest Score: " + highestScore;
                 return;
             }
 
@@ -118,8 +142,9 @@
             updateObstacles();
             checkCollision();
             drawScore();
+            drawHighScore(); // Show high score below current score
             updateDashStatus();
-            
+
             if (!canDash) {
                 if (dashTimer > 0) {
                     dashTimer--;
@@ -127,7 +152,7 @@
                     canDash = true;
                 }
             }
-            
+
             requestAnimationFrame(update);
         }
 
