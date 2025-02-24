@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Car Racing Game</title>
+    <style>
+        body { text-align: center; background: #222; color: white; }
+        canvas { background: gray; display: block; margin: auto; border: 2px solid black; }
+        h1 { font-family: Arial, sans-serif; }
+        button { margin-top: 10px; padding: 10px; font-size: 16px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>Car Racing Game</h1>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <p>Use <b>Left</b> and <b>Right</b> arrow keys to move!</p>
+    <button id="restartButton" onclick="restartGame()">Restart Game</button>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const restartButton = document.getElementById("restartButton");
+
+        let car, obstacles, gameOver, score, speed, bestScore;
+        bestScore = localStorage.getItem("bestScore") || 0;
+
+        function resetGame() {
+            car = { x: 180, y: 400, width: 40, height: 60, color: "blue" };
+            obstacles = [];
+            gameOver = false;
+            score = 0;
+            speed = 3;
+            restartButton.style.display = "none";
+            update();
+        }
+        
+        function drawCar() {
+            ctx.fillStyle = car.color;
+            ctx.fillRect(car.x, car.y, car.width, car.height);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "red";
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += speed;
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(obstacles.indexOf(obstacle), 1);
+                    score++;
+                    if (score % 5 === 0) speed += 0.5;
+                }
+            });
+
+            if (Math.random() < 0.02) {
+                let width = Math.random() * 60 + 30;
+                let x = Math.random() * (canvas.width - width);
+                obstacles.push({ x, y: -20, width, height: 20 });
+            }
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (car.x < obstacle.x + obstacle.width &&
+                    car.x + car.width > obstacle.x &&
+                    car.y < obstacle.y + obstacle.height &&
+                    car.y + car.height > obstacle.y) {
+                    gameOver = true;
+                }
+            });
+        }
+
+        function drawScore() {
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText("Score: " + score, 10, 30);
+            ctx.fillText("Best: " + bestScore, 10, 50);
+        }
+
+        function update() {
+            if (gameOver) {
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "white";
+                ctx.font = "30px Arial";
+                ctx.fillText("Game Over!", 120, 200);
+                ctx.fillText("Score: " + score, 150, 250);
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem("bestScore", bestScore);
+                    ctx.fillText("New Best!", 150, 290);
+                }
+                restartButton.style.display = "block";
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawCar();
+            drawObstacles();
+            updateObstacles();
+            checkCollision();
+            drawScore();
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" && car.x > 0) car.x -= 20;
+            if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += 20;
+        });
+
+        function restartGame() {
+            resetGame();
+        }
+
+        resetGame();
+    </script>
+</body>
+</html>
