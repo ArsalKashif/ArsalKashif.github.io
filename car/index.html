@@ -8,47 +8,42 @@
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 2px solid black; }
         h1 { font-family: Arial, sans-serif; }
-        button { margin-top: 10px; padding: 10px; font-size: 16px; display: none; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
     <h1>Car Racing Game 🚗💨</h1>
     <canvas id="gameCanvas" width="400" height="500"></canvas>
-    <p>Use <b>Left</b> and <b>Right</b> arrow keys to move!</p>
-    <button id="restartButton" onclick="restartGame()">Restart Game</button>
-
+    <p>Use <b>Left</b> and <b>Right</b> arrow keys to move! Hold <b>Shift</b> + Arrow key to dash.</p>
+    <p id="dashStatus">Dash Ready</p>
+    <button onclick="restartGame()">Restart</button>
+    
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const restartButton = document.getElementById("restartButton");
+        const dashStatus = document.getElementById("dashStatus");
 
-        let car, obstacles, gameOver, score, speed, bestScore;
-        let greenObstacles = [];
-        bestScore = localStorage.getItem("bestScore") || 0;
-
-        function resetGame() {
+        let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer;
+        
+        function init() {
             car = { x: 180, y: 400, width: 40, height: 60, color: "blue" };
             obstacles = [];
-            greenObstacles = [];
             gameOver = false;
             score = 0;
             speed = 3;
-            restartButton.style.display = "none";
-            update();
+            canDash = true;
+            dashCooldown = 5;
+            dashTimer = 0;
         }
-        
+
         function drawCar() {
             ctx.fillStyle = car.color;
             ctx.fillRect(car.x, car.y, car.width, car.height);
         }
 
         function drawObstacles() {
-            ctx.fillStyle = "red";
             obstacles.forEach(obstacle => {
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
-            ctx.fillStyle = "green";
-            greenObstacles.forEach(obstacle => {
+                ctx.fillStyle = obstacle.color;
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             });
         }
@@ -58,29 +53,20 @@
                 obstacle.y += speed;
                 if (obstacle.y > canvas.height) {
                     obstacles.splice(obstacles.indexOf(obstacle), 1);
-                    score++;
-                    if (score % 5 === 0) speed += 0.5;
-                }
-            });
-            
-            greenObstacles.forEach(obstacle => {
-                obstacle.y += speed;
-                if (obstacle.y > canvas.height) {
-                    greenObstacles.splice(greenObstacles.indexOf(obstacle), 1);
-                    score = Math.max(0, score - 1);
+                    if (obstacle.color === "green") {
+                        score--;
+                    } else {
+                        score++;
+                        if (score % 5 === 0) speed += 0.5;
+                    }
                 }
             });
 
             if (Math.random() < 0.02) {
                 let width = Math.random() * 60 + 30;
                 let x = Math.random() * (canvas.width - width);
-                obstacles.push({ x, y: -20, width, height: 20 });
-            }
-            
-            if (Math.random() < 0.01) {
-                let width = Math.random() * 60 + 30;
-                let x = Math.random() * (canvas.width - width);
-                greenObstacles.push({ x, y: -20, width, height: 20 });
+                let color = Math.random() < 0.2 ? "green" : "red";
+                obstacles.push({ x, y: -20, width, height: 20, color });
             }
         }
 
@@ -90,17 +76,12 @@
                     car.x + car.width > obstacle.x &&
                     car.y < obstacle.y + obstacle.height &&
                     car.y + car.height > obstacle.y) {
-                    gameOver = true;
-                }
-            });
-            
-            greenObstacles.forEach(obstacle => {
-                if (car.x < obstacle.x + obstacle.width &&
-                    car.x + car.width > obstacle.x &&
-                    car.y < obstacle.y + obstacle.height &&
-                    car.y + car.height > obstacle.y) {
-                    score++;
-                    greenObstacles.splice(greenObstacles.indexOf(obstacle), 1);
+                    if (obstacle.color === "green") {
+                        score++;
+                    } else {
+                        gameOver = true;
+                    }
+                    obstacles.splice(obstacles.indexOf(obstacle), 1);
                 }
             });
         }
@@ -109,7 +90,14 @@
             ctx.fillStyle = "white";
             ctx.font = "20px Arial";
             ctx.fillText("Score: " + score, 10, 30);
-            ctx.fillText("Best: " + bestScore, 10, 50);
+        }
+
+        function updateDashStatus() {
+            if (canDash) {
+                dashStatus.innerText = "Dash Ready";
+            } else {
+                dashStatus.innerText = "Dash Cooldown: " + dashTimer + "s";
+            }
         }
 
         function update() {
@@ -120,12 +108,7 @@
                 ctx.font = "30px Arial";
                 ctx.fillText("Game Over!", 120, 200);
                 ctx.fillText("Score: " + score, 150, 250);
-                if (score > bestScore) {
-                    bestScore = score;
-                    localStorage.setItem("bestScore", bestScore);
-                    ctx.fillText("New Best!", 150, 290);
-                }
-                restartButton.style.display = "block";
+                ctx.fillText("Try Again!", 70, 300);
                 return;
             }
 
@@ -135,19 +118,43 @@
             updateObstacles();
             checkCollision();
             drawScore();
+            updateDashStatus();
+            
+            if (!canDash) {
+                if (dashTimer > 0) {
+                    dashTimer--;
+                } else {
+                    canDash = true;
+                }
+            }
+            
             requestAnimationFrame(update);
         }
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowLeft" && car.x > 0) car.x -= 20;
             if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += 20;
+            
+            if (e.shiftKey && canDash) {
+                if (e.key === "ArrowLeft") {
+                    car.x = 0;
+                    canDash = false;
+                    dashTimer = dashCooldown * 60;
+                } else if (e.key === "ArrowRight") {
+                    car.x = canvas.width - car.width;
+                    canDash = false;
+                    dashTimer = dashCooldown * 60;
+                }
+            }
         });
 
         function restartGame() {
-            resetGame();
+            init();
+            update();
         }
 
-        resetGame();
+        init();
+        update();
     </script>
 </body>
 </html>
