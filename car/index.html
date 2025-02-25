@@ -9,6 +9,27 @@
         canvas { background: gray; display: block; margin: auto; border: 2px solid black; }
         button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
         .top-right { position: absolute; top: 10px; right: 20px; font-size: 18px; }
+        
+        /* Store menu styles */
+        .store-container {
+            position: absolute;
+            right: 10px;
+            top: 50px;
+            font-size: 18px;
+            color: white;
+            text-align: left;
+        }
+        .store-container h2 {
+            margin: 0 0 10px 0;
+        }
+        .skin-option {
+            margin-bottom: 10px;
+        }
+        .skin-option button {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -18,6 +39,31 @@
     <p class="top-right">Bricks: <span id="greenBricks">0</span></p>
     <button onclick="info()">Controls</button>
     
+    <!-- Store Menu -->
+    <div class="store-container">
+        <h2>Store</h2>
+        <div class="skin-option">
+            <span>Blue Car - Free</span>
+            <button onclick="selectSkin('blue')">Select</button>
+        </div>
+        <div class="skin-option">
+            <span>Red Car - 25 Bricks</span>
+            <button id="redButton" onclick="purchaseSkin('red', 25)">Purchase</button>
+        </div>
+        <div class="skin-option">
+            <span>Green Car - 50 Bricks</span>
+            <button id="greenButton" onclick="purchaseSkin('green', 50)">Purchase</button>
+        </div>
+        <div class="skin-option">
+            <span>Yellow Car - 100 Bricks</span>
+            <button id="yellowButton" onclick="purchaseSkin('yellow', 100)">Purchase</button>
+        </div>
+        <div class="skin-option">
+            <span>Black Car - 250 Bricks</span>
+            <button id="yellowButton" onclick="purchaseSkin('black', 250)">Purchase</button>
+        </div>
+    </div>
+    
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
@@ -26,8 +72,12 @@
 
         let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks;
 
+        // Load skin and purchased skins from localStorage
+        let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
+        let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
+
         function init() {
-            car = { x: 180, y: 400, width: 40, height: 60, color: "blue" };
+            car = { x: 180, y: 400, width: 40, height: 60, color: carSkin };
             obstacles = [];
             gameOver = false;
             score = 0;
@@ -39,6 +89,23 @@
             greenBricks = localStorage.getItem("greenBricks") || 0;
             
             greenBricksDisplay.innerText = greenBricks;
+            updateStoreUI();
+        }
+
+        function updateStoreUI() {
+            // Update the buttons in the store based on purchased skins
+            if (purchasedSkins.includes("red")) {
+                document.getElementById("redButton").innerText = "Select";
+                document.getElementById("redButton").onclick = () => selectSkin("red");
+            }
+            if (purchasedSkins.includes("green")) {
+                document.getElementById("greenButton").innerText = "Select";
+                document.getElementById("greenButton").onclick = () => selectSkin("green");
+            }
+            if (purchasedSkins.includes("yellow")) {
+                document.getElementById("yellowButton").innerText = "Select";
+                document.getElementById("yellowButton").onclick = () => selectSkin("yellow");
+            }
         }
 
         function drawCar() {
@@ -59,7 +126,7 @@
                 if (obstacle.y > canvas.height) {
                     obstacles.splice(obstacles.indexOf(obstacle), 1);
                     if (obstacle.color === "green") {
-                    		if (score > 0) score--;
+                        if (score > 0) score--;
                     } else {
                         score++;
                         if (score <= 50) speed = (0.05 * score + 1) ** 0.5;
@@ -130,7 +197,7 @@
             updateObstacles();
             checkCollision();
             drawScore();
-            drawHighScore(); // Show high score below current score
+            drawHighScore();
 
             if (!canDash) {
                 if (dashTimer > 0) {
@@ -173,15 +240,40 @@
                 }
             }
         });
-				
+
         function info() {
-        		alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
+            alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
         }
-        
+
         function restartGame() {
-        		if (gameOver) {
-              init();
-              update();
+            if (gameOver) {
+                init();
+                update();
+            }
+        }
+
+        // Select a car skin (free for blue)
+        function selectSkin(skin) {
+            carSkin = skin;
+            car.color = skin;
+            localStorage.setItem("selectedSkin", skin);
+        }
+
+        // Purchase a skin using green bricks
+        function purchaseSkin(skin, cost) {
+            if (greenBricks >= cost && !purchasedSkins.includes(skin)) {
+                greenBricks -= cost;
+                purchasedSkins.push(skin);
+                localStorage.setItem("greenBricks", greenBricks);
+                localStorage.setItem("purchasedSkins", JSON.stringify(purchasedSkins));
+                greenBricksDisplay.innerText = greenBricks;
+                updateStoreUI();
+                selectSkin(skin);
+            } else if (purchasedSkins.includes(skin)) {
+                // Skin already purchased
+                selectSkin(skin);
+            } else {
+                alert("Not enough bricks!");
             }
         }
 
