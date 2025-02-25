@@ -81,7 +81,7 @@
           roadLines = [];
           gameOver = false;
           score = 0;
-          speed = 1;
+          speed = 1.5;
           canDash = true;
           dashCooldown = 0.5;
           dashTimer = 0;
@@ -166,8 +166,6 @@
                       if (score > 0) score--;
                   } else {
                       score++;
-                      if (score <= 50) speed = (0.05 * score + 1) ** 0.5;
-                      else speed = (0.1 * score + 1) ** 0.5;
                   }
               }
           });
@@ -215,8 +213,17 @@
           ctx.font = "18px Arial";
           ctx.fillText("High Score: " + highestScore, 10, 55);
       }
+      
+      function drawSpeed() {
+      		ctx.fillStyle = "white";
+          ctx.font = "18px Arial";
+          ctx.fillText("Speed: " + Math.round(speed * 20, 2) + "mph", 10, 80);
+      }
 
       function update() {
+      		if (score <= 50) speed = (0.05 * score + 1) ** 0.5 + 0.5;
+					else speed = (0.1 * score + 1) ** 0.5 + 0.5;
+      
           if (gameOver) {
               ctx.fillStyle = "black";
               ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -236,6 +243,7 @@
           checkCollision();
           drawScore();
           drawHighScore();
+          drawSpeed();
           updateRoadLines();  // Move the road lines
 
           if (!canDash) {
