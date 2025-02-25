@@ -7,7 +7,6 @@
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 2px solid black; }
-        h1 { font-family: Arial, sans-serif; }
         button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
         .top-right { position: absolute; top: 10px; right: 20px; font-size: 18px; }
     </style>
@@ -15,8 +14,7 @@
 <body>
     <h1>Car Racing</h1>
     <canvas id="gameCanvas" width="400" height="500"></canvas>
-    <p>Shift</b> + Arrow key to dash.</p>
-    <p id="dashStatus">Dash Ready</p>
+    <h2>Shift</b> + Arrow key to dash.</h2>
     <p id="highScore"></p>
     <p class="top-right">Bricks: <span id="greenBricks">0</span></p>
     <button onclick="restartGame()">Restart</button>
@@ -24,7 +22,6 @@
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const dashStatus = document.getElementById("dashStatus");
         const highScoreDisplay = document.getElementById("highScore");
         const greenBricksDisplay = document.getElementById("greenBricks");
 
@@ -35,7 +32,7 @@
             obstacles = [];
             gameOver = false;
             score = 0;
-            speed = 3;
+            speed = 1;
             canDash = true;
             dashCooldown = 0.5;
             dashTimer = 0;
@@ -63,19 +60,19 @@
                 if (obstacle.y > canvas.height) {
                     obstacles.splice(obstacles.indexOf(obstacle), 1);
                     if (obstacle.color === "green") {
-                        score--;
+                    		if (score > 0) score--;
                     } else {
                         score++;
-                        if (score % 5 === 0) speed += 0.5;
+                        speed = (0.05 * score + 1) ** 0.5;
                     }
                 }
             });
 
-            if (Math.random() < 0.02) {
+            if (Math.random() < 0.01) {
                 let width = Math.random() * 60 + 30;
                 let x = Math.random() * (canvas.width - width);
                 let color = Math.random() < 0.2 ? "green" : "red";
-                obstacles.push({ x, y: -20, width, height: 20, color });
+                obstacles.push({x, y: -20, width, height: 20, color });
             }
         }
 
@@ -115,14 +112,6 @@
             ctx.fillText("High Score: " + highestScore, 10, 55);
         }
 
-        function updateDashStatus() {
-            if (canDash) {
-                dashStatus.innerText = "Dash Ready";
-            } else {
-                dashStatus.innerText = "Dash Cooldown: " + Math.ceil(dashTimer * 1000 / 60) + "ms";
-            }
-        }
-
         function update() {
             if (gameOver) {
                 ctx.fillStyle = "black";
@@ -131,8 +120,7 @@
                 ctx.font = "30px Arial";
                 ctx.fillText("Game Over!", 110, 200);
                 ctx.fillText("Score: " + score, 140, 250);
-                ctx.fillText("Try Again!", 130, 300);
-                highScoreDisplay.innerText = "Highest Score: " + highestScore;
+                ctx.fillText("R to Restart", 115, 300);
                 return;
             }
 
@@ -143,7 +131,6 @@
             checkCollision();
             drawScore();
             drawHighScore(); // Show high score below current score
-            updateDashStatus();
 
             if (!canDash) {
                 if (dashTimer > 0) {
@@ -158,14 +145,18 @@
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowLeft" && car.x > 0) car.x -= 20;
+            if (e.key === "a" && car.x > 0) car.x -= 20;
             if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += 20;
+            if (e.key === "d" && car.x > 0) car.x += 20;
+            
+            if (e.key === "r") restartGame();
             
             if (e.shiftKey && canDash) {
-                if (e.key === "ArrowLeft") {
+                if (e.key === "ArrowLeft" || e.key === "a") {
                     car.x = 0;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
-                } else if (e.key === "ArrowRight") {
+                } else if (e.key === "ArrowRight" || e.key === "d") {
                     car.x = canvas.width - car.width;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
@@ -174,8 +165,10 @@
         });
 
         function restartGame() {
-            init();
-            update();
+        		if (gameOver) {
+              init();
+              update();
+            }
         }
 
         init();
