@@ -63,36 +63,41 @@
             <button id="yellowButton" onclick="purchaseSkin('black', 250)">Purchase</button>
         </div>
     </div>
-    
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const highScoreDisplay = document.getElementById("highScore");
-        const greenBricksDisplay = document.getElementById("greenBricks");
+      <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const highScoreDisplay = document.getElementById("highScore");
+      const greenBricksDisplay = document.getElementById("greenBricks");
 
-        let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks;
+      let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
 
-        // Load skin and purchased skins from localStorage
-        let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
-        let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
+      // Load skin and purchased skins from localStorage
+      let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
+      let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
 
-        function init() {
-            car = { x: 180, y: 400, width: 40, height: 60, color: carSkin };
-            obstacles = [];
-            gameOver = false;
-            score = 0;
-            speed = 1;
-            canDash = true;
-            dashCooldown = 0.5;
-            dashTimer = 0;
-            highestScore = localStorage.getItem("highScore") || 0;
-            greenBricks = localStorage.getItem("greenBricks") || 0;
-            
-            greenBricksDisplay.innerText = greenBricks;
-            updateStoreUI();
-        }
+      function init() {
+          car = { x: 180, y: 400, width: 40, height: 60, color: carSkin };
+          obstacles = [];
+          roadLines = [];
+          gameOver = false;
+          score = 0;
+          speed = 1;
+          canDash = true;
+          dashCooldown = 0.5;
+          dashTimer = 0;
+          highestScore = localStorage.getItem("highScore") || 0;
+          greenBricks = localStorage.getItem("greenBricks") || 0;
 
-        function updateStoreUI() {
+          greenBricksDisplay.innerText = greenBricks;
+          updateStoreUI();
+
+          // Initialize road lines
+          for (let i = 0; i < 6; i++) {
+              roadLines.push({ x: canvas.width / 2 - 10, y: i * 100 - 50, height: 20 });
+          }
+      }
+      
+      function updateStoreUI() {
             // Update the buttons in the store based on purchased skins
             if (purchasedSkins.includes("red")) {
                 document.getElementById("redButton").innerText = "Select";
@@ -108,177 +113,208 @@
             }
         }
 
-        function drawCar() {
-            ctx.fillStyle = car.color;
-            ctx.fillRect(car.x, car.y, car.width, car.height);
-        }
+      function updateRoadLines() {
+          for (let i = 0; i < roadLines.length; i++) {
+              roadLines[i].y += speed;
 
-        function drawObstacles() {
-            obstacles.forEach(obstacle => {
-                ctx.fillStyle = obstacle.color;
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
-        }
+              // If a road line goes out of the canvas, reset its position
+              if (roadLines[i].y > canvas.height) {
+                  roadLines[i].y = 0
+              }
+          }
+      }
 
-        function updateObstacles() {
-            obstacles.forEach(obstacle => {
-                obstacle.y += speed;
-                if (obstacle.y > canvas.height) {
-                    obstacles.splice(obstacles.indexOf(obstacle), 1);
-                    if (obstacle.color === "green") {
-                        if (score > 0) score--;
-                    } else {
-                        score++;
-                        if (score <= 50) speed = (0.05 * score + 1) ** 0.5;
-                        else speed = (0.1 * score + 1) ** 0.5;
-                    }
-                }
-            });
+      function drawRoadLines() {
+          ctx.fillStyle = "rgb(190, 180, 130)";
+          for (let i = 0; i < roadLines.length; i++) {
+              ctx.fillRect(roadLines[i].x, roadLines[i].y, 20, roadLines[i].height);
+          }
+      }
 
-            if (Math.random() < 0.01) {
-                let width = Math.random() * 60 + 30;
-                let x = Math.random() * (canvas.width - width);
-                let color = Math.random() < 0.2 ? "green" : "red";
-                obstacles.push({x, y: -20, width, height: 20, color });
-            }
-        }
+      function drawCar() {
+          ctx.fillStyle = car.color;
+          ctx.fillRect(car.x, car.y, car.width, car.height);
+      }
 
-        function checkCollision() {
-            obstacles.forEach(obstacle => {
-                if (car.x < obstacle.x + obstacle.width &&
-                    car.x + car.width > obstacle.x &&
-                    car.y < obstacle.y + obstacle.height &&
-                    car.y + car.height > obstacle.y) {
-                    
-                    if (obstacle.color === "green") {
-                        score++;
-                        greenBricks++;
-                        localStorage.setItem("greenBricks", greenBricks);
-                        greenBricksDisplay.innerText = greenBricks;
-                    } else {
-                        gameOver = true;
-                        if (score > highestScore) {
-                            highestScore = score;
-                            localStorage.setItem("highScore", highestScore);
-                        }
-                    }
-                    obstacles.splice(obstacles.indexOf(obstacle), 1);
-                }
-            });
-        }
+      function drawObstacles() {
+    obstacles.forEach(obstacle => {
+        ctx.fillStyle = obstacle.color;
+        
+        // Apply a slight glow to the obstacles
+        if (obstacle.color === "green") ctx.shadowColor = "rgba(0, 200, 0, 0.6)";
+        else ctx.shadowColor = "rgba(255, 0, 0, 0.6)";
+        
+        ctx.shadowBlur = 5; //size
+        ctx.shadowOffsetX = 0; // No offset in the X direction
+        ctx.shadowOffsetY = 0; // No offset in the Y direction
 
-        function drawScore() {
-            ctx.fillStyle = "white";
-            ctx.font = "20px Arial";
-            ctx.fillText("Score: " + score, 10, 30);
-        }
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        ctx.shadowColor = "transparent";
+    });
+}
 
-        function drawHighScore() {
-            ctx.fillStyle = "yellow";
-            ctx.font = "18px Arial";
-            ctx.fillText("High Score: " + highestScore, 10, 55);
-        }
+      function updateObstacles() {
+          obstacles.forEach(obstacle => {
+              obstacle.y += speed;
+              if (obstacle.y > canvas.height) {
+                  obstacles.splice(obstacles.indexOf(obstacle), 1);
+                  if (obstacle.color === "green") {
+                      if (score > 0) score--;
+                  } else {
+                      score++;
+                      if (score <= 50) speed = (0.05 * score + 1) ** 0.5;
+                      else speed = (0.1 * score + 1) ** 0.5;
+                  }
+              }
+          });
 
-        function update() {
-            if (gameOver) {
-                ctx.fillStyle = "black";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "white";
-                ctx.font = "30px Arial";
-                ctx.fillText("Game Over!", 110, 200);
-                ctx.fillText("Score: " + score, 140, 250);
-                ctx.fillText("R to Restart", 115, 300);
-                return;
-            }
+          if (Math.random() < 0.01) {
+              let width = Math.random() * 60 + 30;
+              let x = Math.random() * (canvas.width - width);
+              let color = Math.random() < 0.2 ? "green" : "red";
+              obstacles.push({x, y: -20, width, height: 20, color });
+          }
+      }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawCar();
-            drawObstacles();
-            updateObstacles();
-            checkCollision();
-            drawScore();
-            drawHighScore();
+      function checkCollision() {
+          obstacles.forEach(obstacle => {
+              if (car.x < obstacle.x + obstacle.width &&
+                  car.x + car.width > obstacle.x &&
+                  car.y < obstacle.y + obstacle.height &&
+                  car.y + car.height > obstacle.y) {
 
-            if (!canDash) {
-                if (dashTimer > 0) {
-                    dashTimer--;
-                } else {
-                    canDash = true;
-                }
-            }
+                  if (obstacle.color === "green") {
+                      score++;
+                      greenBricks++;
+                      localStorage.setItem("greenBricks", greenBricks);
+                      greenBricksDisplay.innerText = greenBricks;
+                  } else {
+                      gameOver = true;
+                      if (score > highestScore) {
+                          highestScore = score;
+                          localStorage.setItem("highScore", highestScore);
+                      }
+                  }
+                  obstacles.splice(obstacles.indexOf(obstacle), 1);
+              }
+          });
+      }
 
-            requestAnimationFrame(update);
-        }
+      function drawScore() {
+          ctx.fillStyle = "white";
+          ctx.font = "20px Arial";
+          ctx.fillText("Score: " + score, 10, 30);
+      }
 
-        document.addEventListener("keydown", (e) => {
-            if ((e.key === "ArrowLeft" || e.key === "a") && car.x > 0) car.x -= 20;
-            if ((e.key === "ArrowRight" || e.key === "d") && car.x < canvas.width - car.width) car.x += 20;
-            if (score > 50) {
-                if ((e.key === "ArrowUp" || e.key === "w") && car.y > 0) car.y -= 20;
-                if ((e.key === "ArrowDown" || e.key === "s") && car.y < canvas.height - car.height) car.y += 20;
-            }
-            
-            if (e.key === "r") restartGame();
-            
-            if (e.shiftKey && canDash) {
-                if (e.key === "ArrowLeft") {
-                    car.x = 0;
-                    canDash = false;
-                    dashTimer = dashCooldown * 60;
-                } else if (e.key === "ArrowRight") {
-                    car.x = canvas.width - car.width;
-                    canDash = false;
-                    dashTimer = dashCooldown * 60;
-                } else if (e.key === "a") {
-                    car.x = 0;
-                    canDash = false;
-                    dashTimer = dashCooldown * 60;
-                } else if (e.key === "d") {
-                    car.x = canvas.width - car.width;
-                    canDash = false;
-                    dashTimer = dashCooldown * 60;
-                }
-            }
-        });
+      function drawHighScore() {
+          ctx.fillStyle = "yellow";
+          ctx.font = "18px Arial";
+          ctx.fillText("High Score: " + highestScore, 10, 55);
+      }
 
-        function info() {
-            alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
-        }
+      function update() {
+          if (gameOver) {
+              ctx.fillStyle = "black";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = "white";
+              ctx.font = "30px Arial";
+              ctx.fillText("Game Over!", 110, 200);
+              ctx.fillText("Score: " + score, 140, 250);
+              ctx.fillText("R to Restart", 115, 300);
+              return;
+          }
 
-        function restartGame() {
-            if (gameOver) {
-                init();
-                update();
-            }
-        }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          drawRoadLines();  // Draw the road lines
+          drawCar();
+          drawObstacles();
+          updateObstacles();
+          checkCollision();
+          drawScore();
+          drawHighScore();
+          updateRoadLines();  // Move the road lines
 
-        // Select a car skin (free for blue)
-        function selectSkin(skin) {
-            carSkin = skin;
-            car.color = skin;
-            localStorage.setItem("selectedSkin", skin);
-        }
+          if (!canDash) {
+              if (dashTimer > 0) {
+                  dashTimer--;
+              } else {
+                  canDash = true;
+              }
+          }
 
-        // Purchase a skin using green bricks
-        function purchaseSkin(skin, cost) {
-            if (greenBricks >= cost && !purchasedSkins.includes(skin)) {
-                greenBricks -= cost;
-                purchasedSkins.push(skin);
-                localStorage.setItem("greenBricks", greenBricks);
-                localStorage.setItem("purchasedSkins", JSON.stringify(purchasedSkins));
-                greenBricksDisplay.innerText = greenBricks;
-                updateStoreUI();
-                selectSkin(skin);
-            } else if (purchasedSkins.includes(skin)) {
-                // Skin already purchased
-                selectSkin(skin);
-            } else {
-                alert("Not enough bricks!");
-            }
-        }
+          requestAnimationFrame(update);
+      }
 
-        init();
-        update();
-    </script>
+      document.addEventListener("keydown", (e) => {
+          if ((e.key === "ArrowLeft" || e.key === "a") && car.x > 0) car.x -= 20;
+          if ((e.key === "ArrowRight" || e.key === "d") && car.x < canvas.width - car.width) car.x += 20;
+          if (score > 50) {
+              if ((e.key === "ArrowUp" || e.key === "w") && car.y > 0) car.y -= 20;
+              if ((e.key === "ArrowDown" || e.key === "s") && car.y < canvas.height - car.height) car.y += 20;
+          }
+
+          if (e.key === "r") restartGame();
+
+          if (e.shiftKey && canDash) {
+              if (e.key === "ArrowLeft") {
+                  car.x = 0;
+                  canDash = false;
+                  dashTimer = dashCooldown * 60;
+              } else if (e.key === "ArrowRight") {
+                  car.x = canvas.width - car.width;
+                  canDash = false;
+                  dashTimer = dashCooldown * 60;
+              } else if (e.key === "a") {
+                  car.x = 0;
+                  canDash = false;
+                  dashTimer = dashCooldown * 60;
+              } else if (e.key === "d") {
+                  car.x = canvas.width - car.width;
+                  canDash = false;
+                  dashTimer = dashCooldown * 60;
+              }
+          }
+      });
+
+      function info() {
+          alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
+      }
+
+      function restartGame() {
+          if (gameOver) {
+              init();
+              update();
+          }
+      }
+
+      // Select a car skin (free for blue)
+      function selectSkin(skin) {
+          carSkin = skin;
+          car.color = skin;
+          localStorage.setItem("selectedSkin", skin);
+      }
+
+      // Purchase a skin using green bricks
+      function purchaseSkin(skin, cost) {
+          if (greenBricks >= cost && !purchasedSkins.includes(skin)) {
+              greenBricks -= cost;
+              purchasedSkins.push(skin);
+              localStorage.setItem("greenBricks", greenBricks);
+              localStorage.setItem("purchasedSkins", JSON.stringify(purchasedSkins));
+              greenBricksDisplay.innerText = greenBricks;
+              updateStoreUI();
+              selectSkin(skin);
+          } else if (purchasedSkins.includes(skin)) {
+              // Skin already purchased
+              selectSkin(skin);
+          } else {
+              alert("Not enough bricks!");
+          }
+      }
+
+      init();
+      update();
+  </script>
+
 </body>
 </html>
