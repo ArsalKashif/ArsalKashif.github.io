@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Car Racing</title>
+    <title>Car Racing</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 2px solid black; }
@@ -14,10 +14,9 @@
 <body>
     <h1>Car Racing</h1>
     <canvas id="gameCanvas" width="400" height="500"></canvas>
-    <h2>Shift</b> + Arrow key to dash.</h2>
     <p id="highScore"></p>
     <p class="top-right">Bricks: <span id="greenBricks">0</span></p>
-    <button onclick="restartGame()">Restart</button>
+    <button onclick="info()">Controls</button>
     
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -63,7 +62,8 @@
                     		if (score > 0) score--;
                     } else {
                         score++;
-                        speed = (0.05 * score + 1) ** 0.5;
+                        if (score <= 50) speed = (0.05 * score + 1) ** 0.5;
+                        else speed = (0.1 * score + 1) ** 0.5;
                     }
                 }
             });
@@ -144,26 +144,40 @@
         }
 
         document.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowLeft" && car.x > 0) car.x -= 20;
-            if (e.key === "a" && car.x > 0) car.x -= 20;
-            if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += 20;
-            if (e.key === "d" && car.x > 0) car.x += 20;
+            if ((e.key === "ArrowLeft" || e.key === "a") && car.x > 0) car.x -= 20;
+            if ((e.key === "ArrowRight" || e.key === "d") && car.x < canvas.width - car.width) car.x += 20;
+            if (score > 50) {
+                if ((e.key === "ArrowUp" || e.key === "w") && car.y > 0) car.y -= 20;
+                if ((e.key === "ArrowDown" || e.key === "s") && car.y < canvas.height - car.height) car.y += 20;
+            }
             
             if (e.key === "r") restartGame();
             
             if (e.shiftKey && canDash) {
-                if (e.key === "ArrowLeft" || e.key === "a") {
+                if (e.key === "ArrowLeft") {
                     car.x = 0;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
-                } else if (e.key === "ArrowRight" || e.key === "d") {
+                } else if (e.key === "ArrowRight") {
+                    car.x = canvas.width - car.width;
+                    canDash = false;
+                    dashTimer = dashCooldown * 60;
+                } else if (e.key === "a") {
+                    car.x = 0;
+                    canDash = false;
+                    dashTimer = dashCooldown * 60;
+                } else if (e.key === "d") {
                     car.x = canvas.width - car.width;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
                 }
             }
         });
-
+				
+        function info() {
+        		alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
+        }
+        
         function restartGame() {
         		if (gameOver) {
               init();
