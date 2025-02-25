@@ -146,7 +146,8 @@
         
         // Apply a slight glow to the obstacles
         if (obstacle.color === "green") ctx.shadowColor = "rgba(0, 200, 0, 0.6)";
-        else ctx.shadowColor = "rgba(255, 0, 0, 0.6)";
+        else if (obstacle.color === "red") ctx.shadowColor = "rgba(255, 0, 0, 0.6)";
+        else ctx.shadowColor = "rgba(255, 255, 0, 0.6)";
         
         ctx.shadowBlur = 5; //size
         ctx.shadowOffsetX = 0; // No offset in the X direction
@@ -160,11 +161,16 @@
       function updateObstacles() {
           obstacles.forEach(obstacle => {
               obstacle.y += speed;
+              if (obstacle.y > 250 && obstacle.color == "yellow") {
+              		obstacles.splice(obstacles.indexOf(obstacle),1);
+                  score -= 5;
+              }
+              
               if (obstacle.y > canvas.height) {
                   obstacles.splice(obstacles.indexOf(obstacle), 1);
                   if (obstacle.color === "green") {
                       if (score > 0) score--;
-                  } else {
+                  } else if (obstacle.color === "red") {
                       score++;
                   }
               }
@@ -173,7 +179,11 @@
           if (Math.random() < 0.02) {
               let width = Math.random() * 60 + 30;
               let x = Math.random() * (canvas.width - width);
-              let color = Math.random() < 0.2 ? "green" : "red";
+              let color = "red";
+              if (Math.random() < 0.2) {
+              		if (score > 50 && Math.random() < 0.2) color = "yellow";
+                  else color = "green";
+              }
               obstacles.push({x, y: -20, width, height: 20, color });
           }
       }
@@ -188,6 +198,11 @@
                   if (obstacle.color === "green") {
                       score++;
                       greenBricks++;
+                      localStorage.setItem("greenBricks", greenBricks);
+                      greenBricksDisplay.innerText = greenBricks;
+                  } else if (obstacle.color === "yellow") {
+                  		score += 10;
+                      greenBricks  += 10;
                       localStorage.setItem("greenBricks", greenBricks);
                       greenBricksDisplay.innerText = greenBricks;
                   } else {
@@ -225,11 +240,12 @@
 					else speed = (0.1 * score + 1) ** 0.5 + 0.5;
       
           if (gameOver) {
-              ctx.fillStyle = "black";
+              ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
               ctx.fillRect(0, 0, canvas.width, canvas.height);
-              ctx.fillStyle = "white";
+              ctx.fillStyle = "red";
               ctx.font = "30px Arial";
               ctx.fillText("Game Over!", 110, 200);
+              ctx.fillStyle = "white";
               ctx.fillText("Score: " + score, 140, 250);
               ctx.fillText("R to Restart", 115, 300);
               return;
