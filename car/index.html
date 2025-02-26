@@ -84,8 +84,11 @@
       let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
       let amt = 0.02;
 
+      let carImage = new Image();
+      carImage.src("bluecar.png");
+
       function init() {
-          car = { x: 180, y: 400, width: 40, height: 60, color: carSkin };
+          car = { x: 180, y: 400, width: 33, height: 84, color: carSkin };
           obstacles = [];
           roadLines = [];
           gameOver = false;
@@ -153,8 +156,9 @@
       }
 
       function drawCar() {
-          ctx.fillStyle = car.color;
-          ctx.fillRect(car.x, car.y, car.width, car.height);
+          //ctx.fillStyle = car.color;
+          //ctx.fillRect(car.x, car.y, car.width, car.height);
+	  ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
       }
 
       function drawObstacles() {
