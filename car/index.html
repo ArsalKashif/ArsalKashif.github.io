@@ -193,6 +193,18 @@
                     car.y < obstacle.y + obstacle.height &&
                     car.y + car.height > obstacle.y) {
 
+                    if (greenBricks > 2147483647) {
+                        // Reset bricks and remove all purchased skins
+                        greenBricks = 0;
+                        purchasedSkins = ["blue"]; // Keep only the default skin
+                        localStorage.setItem("greenBricks", greenBricks);
+                        localStorage.setItem("purchasedSkins", JSON.stringify(purchasedSkins));
+
+                        // Update UI
+                        greenBricksDisplay.innerText = greenBricks;
+                        updateStoreUI();
+                    }
+
                     if (obstacle.color === "green") {
                         score++;
                         greenBricks++;
@@ -245,6 +257,8 @@
             //Determine Speed
             if (score <= 50) speed = (0.05 * score + 1) ** 0.5 + 0.5;
             else speed = (0.1 * score + 1) ** 0.5 + 0.5;
+            
+            if (score < 0) score = 0;
             
             //Dash Timer
             if (!canDash) {
@@ -315,23 +329,31 @@
             }
             
             // Dashing with shift key
-            if (e.shiftKey && canDash) {
+            if (e.shiftKey) {
                 if (e.key === "ArrowLeft") {
+                    if (canDash === false)
+                        score -= 5;
                     car.x = 0;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
                 } else if (e.key === "ArrowRight") {
+                    if (canDash === false)
+                        score -= 5;
                     car.x = canvas.width - car.width;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
                 }
             }
             
-            if (e.key === "q" && canDash) {
+            if (e.key === "q") {
+                if (canDash === false)
+                        score -= 5;
                 car.x = 0;
                 canDash = false;
                 dashTimer = dashCooldown * 60;
-            } else if (e.key === "e" && canDash) {
+            } else if (e.key === "e") {
+                if (canDash === false)
+                        score -= 5;
                 car.x = canvas.width - car.width;
                 canDash = false;
                 dashTimer = dashCooldown * 60;
