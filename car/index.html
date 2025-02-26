@@ -77,12 +77,11 @@
         const highScoreDisplay = document.getElementById("highScore");
         const greenBricksDisplay = document.getElementById("greenBricks");
 
-        let car, obstacles, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
+        let car, obstacles, amt, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
 
         // Load skin and purchased skins from localStorage
         let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
         let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
-        let amt = 0.02;
 
         let carImage = new Image();
         carImage.src = 'bluecar.png';
@@ -168,16 +167,22 @@
                     
             if (score > 140) amt = 0.06;
             else if (score > 80) amt = 0.04;
+            else amt = 0.02;
             
             if (Math.random() < amt) {
                 let width = Math.random() * 60 + 30;
                 let x = Math.random() * (canvas.width - width);
-                let color = "red";
-                if (Math.random() < 0.2) {
-                    if (score > 50 && Math.random() < 0.2) color = "yellow";
-                    else color = "green";
-                }
-                obstacles.push({x, y: -20, width, height: 20, color });
+
+                //Choose Brick Color
+                let color;
+                let brickVal = Math.random();
+                if (score > 50 && brickVal < 0.04) {
+                    color = "yellow";
+                    width = 20;
+                } else if (brickVal < 0.2) {
+                    color = "green";
+                } else color = "red"
+                obstacles.push({x, y: -20, width, height: 15, color });
             }
         }
 
@@ -229,6 +234,14 @@
         }
 
         function update() {
+            // Handle continuous movement
+            if (isMovingLeft && car.x > 0) {
+                car.x -= 1.5; // Adjust this value to control the speed
+            }
+            if (isMovingRight && car.x < canvas.width - car.width) {
+                car.x += 1.5; // Adjust this value to control the speed
+            }
+            
             //Determine Speed
             if (score <= 50) speed = (0.05 * score + 1) ** 0.5 + 0.5;
             else speed = (0.1 * score + 1) ** 0.5 + 0.5;
@@ -276,17 +289,27 @@
             }
         }
 
+        let isMovingLeft = false;
+        let isMovingRight = false;
+
         document.addEventListener("keydown", (e) => {
-            //Basic Movement
-            if ((e.key === "ArrowLeft" || e.key === "a") && car.x > 0) car.x -= 20;
-            if ((e.key === "ArrowRight" || e.key === "d") && car.x < canvas.width - car.width) car.x += 20;
+            // Start moving when the key is pressed down
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                isMovingLeft = true;
+            }
+            if (e.key === "ArrowRight" || e.key === "d") {
+                isMovingRight = true;
+            }
+
+            if (e.key === "r") restartGame();
+            
+            // Basic Movement with WASD / Arrow Keys
             if (score > 50) {
                 if ((e.key === "ArrowUp" || e.key === "w") && car.y > 0) car.y -= 20;
                 if ((e.key === "ArrowDown" || e.key === "s") && car.y < canvas.height - car.height) car.y += 20;
             }
-            if (e.key === "r") restartGame();
             
-            //Dashing Left, Right Arrows
+            // Dashing with shift key
             if (e.shiftKey && canDash) {
                 if (e.key === "ArrowLeft") {
                     car.x = 0;
@@ -299,7 +322,6 @@
                 }
             }
             
-            //Dashing Q, E Keys
             if (e.key === "q" && canDash) {
                 car.x = 0;
                 canDash = false;
@@ -310,6 +332,16 @@
                 dashTimer = dashCooldown * 60;
             }
         });
+
+        document.addEventListener("keyup", (e) => {
+            // Stop movement when the key is released
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                isMovingLeft = false;
+            }
+            if (e.key === "ArrowRight" || e.key === "d") {
+                isMovingRight = false;
+            }
+        })
 
         function info() {
             alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
