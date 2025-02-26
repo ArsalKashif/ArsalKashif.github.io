@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Racing</title>
+    <title>Car Racing v2.7</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 10px solid brown; }
@@ -99,6 +99,14 @@
             highestScore = localStorage.getItem("highScore") || 0;
             greenBricks = localStorage.getItem("greenBricks") || 0;
 
+	        if (greenBricks > 1000000) {
+                //Glitches -> Remove all skins and reset bricks to 0.
+                greenBricks = 0;
+                purchasedSkins = ["blue"];
+                localStorage.setItem("greenBricks", greenBricks);
+                localStorage.setItem("purchasedSkins", JSON.stringify(purchasedSkins));
+            }
+
             greenBricksDisplay.innerText = greenBricks;
             updateStoreUI();
 
@@ -109,9 +117,9 @@
         }
 
         function drawRoadLines() {
-            ctx.fillStyle = "rgba(250, 250, 230, 0.7)";
+            ctx.fillStyle = "rgb(230, 230, 210)";
             for (let i = 0; i < roadLines.length; i++) {
-                ctx.fillRect(roadLines[i].x, roadLines[i].y, 20, roadLines[i].height);
+                ctx.fillRect(roadLines[i].x, roadLines[i].y, 15, roadLines[i].height);
             }
         }
 
@@ -193,26 +201,18 @@
                     car.y < obstacle.y + obstacle.height &&
                     car.y + car.height > obstacle.y) {
 
-                    if (greenBricks > 2147483647) {
-                        // Reset bricks and remove all purchased skins
-                        greenBricks = 0;
-                        purchasedSkins = ["blue"]; // Keep only the default skin
-                        localStorage.setItem("greenBricks", greenBricks);
-                        localStorage.setItem("purchasedSkins", JSON.stringify(purchasedSkins));
-
-                        // Update UI
-                        greenBricksDisplay.innerText = greenBricks;
-                        updateStoreUI();
-                    }
-
                     if (obstacle.color === "green") {
                         score++;
                         greenBricks++;
+			if (Math.random() < 0.5) greenBricks++;
                         localStorage.setItem("greenBricks", greenBricks);
                         greenBricksDisplay.innerText = greenBricks;
                     } else if (obstacle.color === "yellow") {
                         score += 10;
-                        greenBricks  += 10;
+                        for (let i = 0; i < 10; i++)
+			{
+				greenBricks++;
+			}
                         localStorage.setItem("greenBricks", greenBricks);
                         greenBricksDisplay.innerText = greenBricks;
                     } else {
@@ -252,6 +252,12 @@
             }
             if (isMovingRight && car.x < canvas.width - car.width) {
                 car.x += 2.25; // Adjust this value to control the speed
+            }
+            if (isMovingUp && car.y > 0 && score > 50) {
+                car.y -= 1.75; // Adjust this value to control the speed
+            }
+            if (isMovingDown && car.y < canvas.height - car.height && score > 50) {
+                car.y += 1.75; // Adjust this value to control the speed
             }
             
             //Determine Speed
@@ -309,54 +315,38 @@
 
         let isMovingLeft = false;
         let isMovingRight = false;
+        let isMovingUp = false;
+        let isMovingDown = false;
 
         document.addEventListener("keydown", (e) => {
-            // Start moving when the key is pressed down
+            // Start movement when the key is pressed down
             if (e.key === "ArrowLeft" || e.key === "a") {
                 isMovingLeft = true;
             }
             if (e.key === "ArrowRight" || e.key === "d") {
                 isMovingRight = true;
             }
-
+            if ((e.key === "ArrowUp" || e.key === "w")) {
+                isMovingUp = true;
+            }
+            if ((e.key === "ArrowDown" || e.key === "s")) {
+                isMovingDown = true;
+            }
             if (e.key === "r") restartGame();
             if (e.key === "p") pauseGame();
-            
-            // Basic Movement with WASD / Arrow Keys
-            if (score > 50) {
-                if ((e.key === "ArrowUp" || e.key === "w") && car.y > 0) car.y -= 20;
-                if ((e.key === "ArrowDown" || e.key === "s") && car.y < canvas.height - car.height) car.y += 20;
-            }
-            
-            // Dashing with shift key
+
             if (e.shiftKey) {
-                if (e.key === "ArrowLeft") {
-                    if (canDash === false)
-                        score -= 5;
+                if (e.key === "ArrowLeft" || e.key === "a") {
+                    if (!canDash) score -= 5;
                     car.x = 0;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
-                } else if (e.key === "ArrowRight") {
-                    if (canDash === false)
-                        score -= 5;
+                } else if (e.key === "ArrowRight" || e.key === "d") {
+                    if (!canDash) score -= 5;
                     car.x = canvas.width - car.width;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
                 }
-            }
-            
-            if (e.key === "q") {
-                if (canDash === false)
-                        score -= 5;
-                car.x = 0;
-                canDash = false;
-                dashTimer = dashCooldown * 60;
-            } else if (e.key === "e") {
-                if (canDash === false)
-                        score -= 5;
-                car.x = canvas.width - car.width;
-                canDash = false;
-                dashTimer = dashCooldown * 60;
             }
         });
 
@@ -368,7 +358,13 @@
             if (e.key === "ArrowRight" || e.key === "d") {
                 isMovingRight = false;
             }
-        })
+            if (e.key === "ArrowUp" || e.key === "w" && score > 50) {
+                isMovingUp = false;
+            }
+            if (e.key === "ArrowDown" || e.key === "s" && score > 50) {
+                isMovingDown = false;
+            }
+        });
 
         function info() {
             alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
