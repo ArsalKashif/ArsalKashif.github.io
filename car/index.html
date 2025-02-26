@@ -104,12 +104,12 @@
 
             // Initialize road lines
             for (let i = 0; i < 6; i++) {
-                roadLines.push({ x: canvas.width / 2 - 10, y: i * 100 - 50, height: 40 });
+                roadLines.push({ x: canvas.width / 2 - 10, y: i * 100 - 50, height: 20 });
             }
         }
 
         function drawRoadLines() {
-            ctx.fillStyle = "rgba(250, 250, 230, 0.7)";
+            ctx.fillStyle = "rgb(190, 180, 130)";
             for (let i = 0; i < roadLines.length; i++) {
                 ctx.fillRect(roadLines[i].x, roadLines[i].y, 20, roadLines[i].height);
             }
@@ -195,12 +195,13 @@
 
                     if (obstacle.color === "green") {
                         score++;
-                        greenBricks++;
+                        if (Math.random() < 0.5) greenBricks += 2;
+                        else greenBricks++;
                         localStorage.setItem("greenBricks", greenBricks);
                         greenBricksDisplay.innerText = greenBricks;
                     } else if (obstacle.color === "yellow") {
                         score += 10;
-                        greenBricks  += 10;
+                        greenBricks += 15;
                         localStorage.setItem("greenBricks", greenBricks);
                         greenBricksDisplay.innerText = greenBricks;
                     } else {
@@ -236,10 +237,10 @@
         function update() {
             // Handle continuous movement
             if (isMovingLeft && car.x > 0) {
-                car.x -= 2.25; // Adjust this value to control the speed
+                car.x -= 1.5; // Adjust this value to control the speed
             }
             if (isMovingRight && car.x < canvas.width - car.width) {
-                car.x += 2.25; // Adjust this value to control the speed
+                car.x += 1.5; // Adjust this value to control the speed
             }
             
             //Determine Speed
@@ -281,16 +282,12 @@
             drawSpeed();
             requestAnimationFrame(update);
         }
-				
-        function pauseGame() {
-        		alert("Game Paused");
-        }
-        
+
         function restartGame() {
-            if (gameOver) {
+            //if (gameOver) {
                 init();
                 update();
-            }
+            //}
         }
 
         let isMovingLeft = false;
@@ -306,7 +303,6 @@
             }
 
             if (e.key === "r") restartGame();
-            if (e.key === "p") pauseGame();
             
             // Basic Movement with WASD / Arrow Keys
             if (score > 50) {
@@ -315,23 +311,31 @@
             }
             
             // Dashing with shift key
-            if (e.shiftKey && canDash) {
+            if (e.shiftKey) {
                 if (e.key === "ArrowLeft") {
+                    if (canDash === false)
+                        score -= 5;
                     car.x = 0;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
                 } else if (e.key === "ArrowRight") {
+                    if (canDash === false)
+                        score -= 5;
                     car.x = canvas.width - car.width;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
                 }
             }
             
-            if (e.key === "q" && canDash) {
+            if (e.key === "q") {
+                if (canDash === false)
+                    score -= 5;
                 car.x = 0;
                 canDash = false;
                 dashTimer = dashCooldown * 60;
             } else if (e.key === "e" && canDash) {
+                if (canDash === false)
+                    score -= 5;
                 car.x = canvas.width - car.width;
                 canDash = false;
                 dashTimer = dashCooldown * 60;
