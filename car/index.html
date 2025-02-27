@@ -78,11 +78,11 @@
         const greenBricksDisplay = document.getElementById("greenBricks");
 
         let car, obstacles, amt, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
+        let bullets, ammo;
 
-        // Load skin and purchased skins from localStorage
+        //Car and Skins
         let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
         let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
-
         let carImage = new Image();
         carImage.src = 'bluecar.png';
 
@@ -98,6 +98,9 @@
             dashTimer = 0;
             highestScore = localStorage.getItem("highScore") || 0;
             greenBricks = localStorage.getItem("greenBricks") || 0;
+            
+            bullets = [];
+            ammo = 100;
 
 	        if (greenBricks > 1000000) {
                 //Glitches -> Remove all skins and reset bricks to 0.
@@ -135,7 +138,7 @@
         }
 
         function drawCar() {
-                ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
+            ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
         }
 
         function drawObstacles() {
@@ -227,6 +230,31 @@
             });
         }
 
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function spawnBullet() {
+            if (ammo > 0) {
+                ammo -= 1;
+                let x = car.x + 8;
+                let y = car.y;
+                bullets.push({x, y, width: 15, height: 15, color: "orange"});
+            }
+        }
+
+        function updateBullets() {
+            bullets.forEach(bullet => {
+                bullet.y -= 5;
+                if (bullet.y < 0) {
+                    bullets.splice(bullets.indexOf(bullet),1);
+                }
+            });
+        }
+
         function drawScore() {
             ctx.fillStyle = "white";
             ctx.font = "20px Arial";
@@ -248,21 +276,21 @@
         function update() {
             // Handle continuous movement
             if (isMovingLeft && car.x > 0) {
-                car.x -= 2.25; // Adjust this value to control the speed
-            }
-            if (isMovingRight && car.x < canvas.width - car.width) {
-                car.x += 2.25; // Adjust this value to control the speed
-            }
-            if (isMovingUp && car.y > 0 && score > 50) {
-                car.y -= 1.75; // Adjust this value to control the speed
-            }
-            if (isMovingDown && car.y < canvas.height - car.height && score > 50) {
-                car.y += 1.75; // Adjust this value to control the speed
+                car.x -= 2.25;
+            } if (isMovingRight && car.x < canvas.width - car.width) {
+                car.x += 2.25;
+            } if (isMovingUp && car.y > 0 && score > 50) {
+                car.y -= 1.75;
+            } if (isMovingDown && car.y < canvas.height - car.height && score > 50) {
+                car.y += 1.75;
             }
             
             //Determine Speed
-            if (score <= 50) speed = (0.05 * score + 1) ** 0.5 + 0.5;
-            else speed = (0.1 * score + 1) ** 0.5 + 0.5;
+            if (score < 50) {
+                speed = (0.05 * score + 1) ** 0.5 + 0.5;
+            } else {
+                speed = (0.1 * score + 1) ** 0.5 + 0.5;
+            }
             
             if (score < 0) score = 0;
             
@@ -295,6 +323,8 @@
 	        drawCar();
             drawObstacles();
             updateObstacles();
+            drawBullets()
+            updateBullets()
             checkCollision();
             drawScore();
             drawHighScore();
@@ -332,9 +362,15 @@
             if ((e.key === "ArrowDown" || e.key === "s")) {
                 isMovingDown = true;
             }
+
+            if (e.key === " " && ammo > 0) {
+                spawnBullet();
+            }
+
             if (e.key === "r") restartGame();
             if (e.key === "p") pauseGame();
 
+            //Dashing
             if (e.shiftKey) {
                 if (e.key === "ArrowLeft" || e.key === "a") {
                     if (!canDash) score -= 5;
@@ -350,6 +386,7 @@
             }
         });
 
+        //Smooth Movement
         document.addEventListener("keyup", (e) => {
             // Stop movement when the key is released
             if (e.key === "ArrowLeft" || e.key === "a") {
@@ -370,6 +407,7 @@
             alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
         }
 
+        //Skins
         function selectSkin(skin) {
             if (skin === "blue") carImage.src = 'bluecar.png';
             else if (skin === "red") carImage.src = 'redcar.png';
