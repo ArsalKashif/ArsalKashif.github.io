@@ -415,6 +415,52 @@
             }
         }
 
+        function genSave() {
+            let save = "";
+            save += ":HS:" + highestScore;
+            save += ":SK:" + purchasedSkins;
+            save += ":GB:" + greenBricks;
+
+            let seed = ((highestScore % 100) * 1009) ** 2 % 10**9;
+            seed = seed.toString().repeat(12);
+
+            let offset;
+            let eSave = "";         
+            for (let i = 0; i < save.length; i++) {
+                let charCode = save.charCodeAt(i); // Get ASCII value of character
+                let seedCharCode = seed.charCodeAt(i % seed.length); // Get corresponding seed character ASCII value
+                let newCharCode = charCode + 1 + (seedCharCode % 4); // Add a small offset from seed
+                eSave += String.fromCharCode(newCharCode); // Convert back to character and append
+            }
+            eSave = highestScore + ":" + eSave;
+
+            alert("Save Code [UNUSED]:\n" + eSave);
+            return eSave;
+        }
+
+        function loadSave(eSave) {
+            let colonIndex = eSave.indexOf(":");
+            if (colonIndex === -1) return null; // Invalid save format
+
+            let highestScore = parseInt(eSave.substring(0, colonIndex)); // Extract highest score
+            let eData = eSave.substring(colonIndex + 1); // Encrypted data
+
+            let seed = ((highestScore % 100) * 1009) ** 2 % 10**9;
+            seed = seed.toString().repeat(12);
+
+            let save = "";
+            for (let i = 0; i < eData.length; i++) {
+                let charCode = eData.charCodeAt(i); // Get ASCII value of encrypted character
+                let seedCharCode = seed.charCodeAt(i % seed.length); // Get corresponding seed character ASCII value
+                let originalCharCode = charCode - 1 - (seedCharCode % 4); // Reverse the encoding process
+                save += String.fromCharCode(originalCharCode); // Convert back to character and append
+            }
+
+            console.log(save);
+            return save;
+        }
+
+
         document.addEventListener("keydown", (e) => {
             // Start movement when the key is pressed down
             if (e.key === "ArrowLeft" || e.key === "a") {
@@ -436,6 +482,7 @@
 
             if (e.key === "r") restartGame();
             if (e.key === "p") pauseGame();
+            if (e.key === "e") genSave();
 
             //Dashing
             if (e.shiftKey) {
