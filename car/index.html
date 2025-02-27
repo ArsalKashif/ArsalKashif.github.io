@@ -91,13 +91,20 @@
             <button id="invisButton" onclick="purchaseSkin('invis', 1000)">Purchase</button>
         </div>
     </div>
+    <!-- Speed Slider -->
+    <div class="speed-slider">
+        <label for="speedRange">Speed Offset: <span id="speedValue">0.5</span></label>
+        <input type="range" id="speedRange" min="0" max="1.5" value="0.5" step="0.1" oninput="updateSpeed(this.value)">
+    </div>
       <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const highScoreDisplay = document.getElementById("highScore");
         const greenBricksDisplay = document.getElementById("greenBricks");
 
-        let car, obstacles, amt, gameOver, score, speed, canDash, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
+        //Variables
+        let car, obstacles, amt, gameOver, score, speed, initialSpeed = 0.5, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
+        let isMovingLeft, isMovingRight, isMovingUp, isMovingDown;
         let bullets, ammo;
 
         //Car and Skins
@@ -107,6 +114,7 @@
         carImage.src = 'bluecar.png';
 
         function init() {
+            //Main Game & Graphics
             car = {x: 183, y: 400, width: 33, height: 84, color: carSkin};
             obstacles = [];
             roadLines = [];
@@ -119,6 +127,13 @@
             highestScore = localStorage.getItem("highScore") || 0;
             greenBricks = localStorage.getItem("greenBricks") || 0;
             
+            //Prevent bugs
+            isMovingLeft = false;
+            isMovingRight = false;
+            isMovingUp = false;
+            isMovingDown = false;
+            
+            //Shooting
             bullets = [];
             ammo = 0;
 
@@ -155,6 +170,13 @@
                     roadLines[i].y = 0
                 }
             }
+        }
+
+        function updateSpeed(value) {
+            if (gameOver) {
+                initialSpeed = parseFloat(value);
+            }
+            document.getElementById('speedValue').innerText = initialSpeed;
         }
 
         function drawCar() {
@@ -336,9 +358,9 @@
             
             //Determine Speed
             if (score < 50) {
-                speed = (0.05 * score + 1) ** 0.5 + 0.5;
+                speed = (0.05 * score + 1) ** 0.5 + initialSpeed;
             } else {
-                speed = (0.1 * score + 1) ** 0.5 + 0.5;
+                speed = (0.1 * score + 1) ** 0.5 + initialSpeed;
             }
             
             if (score < 0) score = 0;
@@ -393,11 +415,6 @@
             }
         }
 
-        let isMovingLeft = false;
-        let isMovingRight = false;
-        let isMovingUp = false;
-        let isMovingDown = false;
-
         document.addEventListener("keydown", (e) => {
             // Start movement when the key is pressed down
             if (e.key === "ArrowLeft" || e.key === "a") {
@@ -422,12 +439,12 @@
 
             //Dashing
             if (e.shiftKey) {
-                if (e.key === "ArrowLeft" || e.key === "a") {
+                if (e.key === "ArrowLeft" || e.key === "A") {
                     if (!canDash) score -= 5;
                     car.x = 0;
                     canDash = false;
                     dashTimer = dashCooldown * 60;
-                } else if (e.key === "ArrowRight" || e.key === "d") {
+                } else if (e.key === "ArrowRight" || e.key === "D") {
                     if (!canDash) score -= 5;
                     car.x = canvas.width - car.width;
                     canDash = false;
