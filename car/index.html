@@ -100,7 +100,7 @@
             greenBricks = localStorage.getItem("greenBricks") || 0;
             
             bullets = [];
-            ammo = 100;
+            ammo = 0;
 
 	        if (greenBricks > 1000000) {
                 //Glitches -> Remove all skins and reset bricks to 0.
@@ -187,7 +187,12 @@
                 //Choose Brick Color
                 let color;
                 let brickVal = Math.random();
-                if (score > 50 && brickVal < 0.04) {
+                if ((score > 100 && score < 120) || (score > 120 && brickVal < 0.04)) {
+                    color = "purple"
+                    width = 400
+                    x = 0;
+                }
+                else if (score > 50 && brickVal < 0.04) {
                     color = "yellow";
                     width = 20;
                 } else if (brickVal < 0.2) {
@@ -207,15 +212,17 @@
                     if (obstacle.color === "green") {
                         score++;
                         greenBricks++;
-			if (Math.random() < 0.5) greenBricks++;
+                        ammo++;
+                        ammo++;
+			            if (Math.random() < 0.5) greenBricks++;
                         localStorage.setItem("greenBricks", greenBricks);
                         greenBricksDisplay.innerText = greenBricks;
                     } else if (obstacle.color === "yellow") {
                         score += 10;
                         for (let i = 0; i < 10; i++)
-			{
-				greenBricks++;
-			}
+                        {
+                            greenBricks++;
+                        }
                         localStorage.setItem("greenBricks", greenBricks);
                         greenBricksDisplay.innerText = greenBricks;
                     } else {
@@ -227,13 +234,22 @@
                     }
                     obstacles.splice(obstacles.indexOf(obstacle), 1);
                 }
-            });
-        }
 
-        function drawBullets() {
-            bullets.forEach(bullet => {
-                ctx.fillStyle = bullet.color;
-                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                bullets.forEach(bullet => {
+                    if (bullet.x < obstacle.x + obstacle.width &&
+                    bullet.x + bullet.width > obstacle.x &&
+                    bullet.y < obstacle.y + obstacle.height &&
+                    bullet.y + bullet.height > obstacle.y) {
+                        if ((obstacle.color === "purple" || obstacle.color === "red") && score > 95) {
+                            obstacles.splice(obstacles.indexOf(obstacle), 1);
+                            bullets.splice(bullets.indexOf(bullet), 1);
+                            score++;
+                            greenBricks++;
+                        } else {
+                            bullets.splice(bullets.indexOf(bullet), 1);
+                        }
+                    }
+                });
             });
         }
 
@@ -244,6 +260,13 @@
                 let y = car.y;
                 bullets.push({x, y, width: 15, height: 15, color: "orange"});
             }
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
         }
 
         function updateBullets() {
@@ -271,6 +294,12 @@
             ctx.fillStyle = "white";
             ctx.font = "18px Arial";
             ctx.fillText("Speed: " + Math.round(speed * 20, 2) + "mph", 10, 80);
+        }
+
+        function drawAmmo() {
+            ctx.fillStyle = "orange";
+            ctx.font = "20px Arial";
+            ctx.fillText("Ammo: " + ammo, 300, 30);
         }
 
         function update() {
@@ -329,6 +358,7 @@
             drawScore();
             drawHighScore();
             drawSpeed();
+            if (score > 50) drawAmmo();
             requestAnimationFrame(update);
         }
 				
@@ -363,7 +393,7 @@
                 isMovingDown = true;
             }
 
-            if (e.key === " " && ammo > 0) {
+            if (e.key === " " && ammo > 0 && score > 95) {
                 spawnBullet();
             }
 
