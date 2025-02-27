@@ -23,12 +23,32 @@
             margin: 0 0 10px 0;
         }
         .skin-option {
-            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 300px; /* Adjust width as needed */
+            padding: 5px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+        }
+        .skin-option span {
+            padding: 5px 10px;
+            border-right: 2px solid white;
+            flex: 1;
+            text-align: center;
         }
         .skin-option button {
             padding: 5px 10px;
             font-size: 14px;
-            margin-top: 5px;
+            background-color: lightgray;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        .skin-option button:hover {
+            background-color: #4CAF50;
+            color: white;
         }
     </style>
 </head>
@@ -43,31 +63,31 @@
     <div class="store-container">
         <h2>Store</h2>
         <div class="skin-option">
-            <span>Blue Car - Free</span>
+            <span style="color:blue">Blue Car:<br>0 Bricks</span>
             <button onclick="selectSkin('blue')">Select</button>
         </div>
         <div class="skin-option">
-            <span>Red Car - 25 Bricks</span>
+            <span style="color:red"></style>Red Car:<br>25 Bricks</span>
             <button id="redButton" onclick="purchaseSkin('red', 25)">Purchase</button>
         </div>
         <div class="skin-option">
-            <span>Green Car - 50 Bricks</span>
+            <span style="color:limegreen">Green Car:<br>50 Bricks</span>
             <button id="greenButton" onclick="purchaseSkin('green', 50)">Purchase</button>
         </div>
         <div class="skin-option">
-            <span>Yellow Car - 100 Bricks</span>
+            <span style="color:gold">Yellow Car:<br>100 Bricks</span>
             <button id="yellowButton" onclick="purchaseSkin('yellow', 100)">Purchase</button>
         </div>
         <div class="skin-option">
-            <span>Black Car - 250 Bricks</span>
+            <span style="color:lightgray">Black Car:<br>250 Bricks</span>
             <button id="blackButton" onclick="purchaseSkin('black', 250)">Purchase</button>
         </div>
         <div class="skin-option">
-            <span>Purple Car - 500 Bricks</span>
+            <span style="color:purple">Purple Car:<br>500 Bricks</span>
             <button id="purpleButton" onclick="purchaseSkin('purple', 500)">Purchase</button>
         </div>
         <div class="skin-option">
-            <span>Invisible Car - 1000 Bricks</span>
+            <span>Invisible Car:<br>1000 Bricks</span>
             <button id="invisButton" onclick="purchaseSkin('invis', 1000)">Purchase</button>
         </div>
     </div>
