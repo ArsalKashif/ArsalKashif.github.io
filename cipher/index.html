@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AOV</title>
+    <style>
+        body {
+            font-family: "Courier New", monospace;
+            text-align: center;
+            margin: 20px;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        textarea, input {
+            width: 80%;
+            margin: 10px 0;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border: 1px solid #333;
+            padding: 5px;
+            font-family: "Courier New", monospace;
+        }
+        button {
+            background-color: #333;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        .about {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h2>ASCII Value Offsets</h2>
+    <textarea id="inputText" placeholder="Enter text"></textarea><br>
+    <input type="text" id="key" placeholder="Enter key"><br>
+    <button onclick="encryptText()">Encrypt</button>
+    <button onclick="decryptText()">Decrypt</button><br>
+    <textarea id="outputText" placeholder="Output" readonly></textarea>
+    
+    <div class="about">
+        <p>AOV is a secure encryption method created by Arsal Kashif. It uses a key expansion algorithm to manipulate the key into generating offsets</p>
+        <P>that modify the original plain text. To encrypt, simply enter in the plain text and the key and click encrypt. Decryption is just as simpl</p>
+        <p>e, but instead you enter the cipher text. Note that only characters with ASCII values from 32-126 are allowed, other wise it will not work</p>
+        <p>as intented.</p>
+    </div>
+    
+    <script>
+        function genOffsets(txt, key) {
+            let keySum = 0n;
+            let keyCon = "";
+            for (let i = 0; i < key.length; i++) {
+                keySum += BigInt(key.charCodeAt(i));
+                keyCon += key.charCodeAt(i);
+            }
+            let keyValue = keySum * BigInt(parseInt(keyCon));
+            let expansion = keyValue.toString();
+            while (expansion.length < txt.length) {
+                while (keyValue < (2n**512n)) {
+                    keyValue += BigInt(keyValue**BigInt(4)/BigInt(3));
+                }
+                expansion += keyValue.toString();
+                keyValue = BigInt(keyValue.toString().substring(0, 32));
+            }
+            const offsets = [];
+            for (let i = 0; i < txt.length; i++) {
+                const slice = expansion.substring(i, i+2);
+                offsets.push(parseInt(slice, 10) % 94);
+            }
+            return offsets;
+        }
+        
+        function encrypt(plain, key) {
+            let offsets = genOffsets(plain, key);
+            let cipher = "";
+            for (let i = 0; i < plain.length; i++) {
+                let char = plain.substring(i, i+1);
+                let offset = char.charCodeAt(0) + offsets[i];
+                if (offset > 126) offset = (offset % 126) + 32;
+                cipher += String.fromCharCode(offset);
+            }
+            return cipher;
+        }
+        
+        function decrypt(cipher, key) {
+            let offsets = genOffsets(cipher, key);
+            let plain = "";
+            for (let i = 0; i < cipher.length; i++) {
+                let char = cipher.substring(i, i+1);
+                let offset = char.charCodeAt(0) - offsets[i];
+                if (offset < 32) offset = 126 - 32 + offset;
+                plain += String.fromCharCode(offset);
+            }
+            return plain;
+        }
+        
+        function encryptText() {
+            let inputText = document.getElementById("inputText").value;
+            let key = document.getElementById("key").value;
+            if (!key) { alert("Please enter a key"); return; }
+            document.getElementById("outputText").value = encrypt(inputText, key);
+        }
+        
+        function decryptText() {
+            let inputText = document.getElementById("inputText").value;
+            let key = document.getElementById("key").value;
+            if (!key) { alert("Please enter a key"); return; }
+            document.getElementById("outputText").value = decrypt(inputText, key);
+        }
+    </script>
+</body>
+</html>
