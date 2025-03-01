@@ -44,13 +44,16 @@
     <input type="text" id="key" placeholder="Enter key"><br>
     <button onclick="encryptText()">Encrypt</button>
     <button onclick="decryptText()">Decrypt</button><br>
-    <textarea id="outputText" placeholder="Output" readonly></textarea>
+    <textarea id="outputText" placeholder="Output" readonly></textarea><br>
+    
+    <!-- Clear All Button -->
+    <button onclick="clearAll()">Clear All</button>
     
     <div class="about">
-        <p>AOV is a secure encryption method created by Arsal Kashif. It uses a key expansion algorithm to manipulate the key into generating offsets</p>
+        <p>AOV is a secure encryption method created by ----- ------. It uses a key expansion algorithm to manipulate the key into generating offsets</p>
         <P>that modify the original plain text. To encrypt, simply enter in the plain text and the key and click encrypt. Decryption is just as simpl</p>
-        <p>e, but instead you enter the cipher text. Note that only characters with ASCII values from 32-126 are allowed, other wise it will not work</p>
-        <p>as intented.</p>
+        <p>e, but instead you enter the cipher text. Note that only characters with ASCII values from 32-126 are allowed, otherwise it will not work</p>
+        <p>as intended.</p>
     </div>
     
     <script>
@@ -114,6 +117,18 @@
             let key = document.getElementById("key").value;
             if (!key) { alert("Please enter a key"); return; }
             document.getElementById("outputText").value = decrypt(inputText, key);
+        }
+
+        // Function to clear all fields
+        function clearAll() {
+            document.getElementById("inputText").value = "";
+            document.getElementById("key").value = "";
+            document.getElementById("outputText").value = "";
+        }
+
+        // Clear fields when the tab is closed
+        window.onbeforeunload = function () {
+            clearAll();
         }
     </script>
 </body>
