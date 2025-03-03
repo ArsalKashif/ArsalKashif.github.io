@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Racing v2.7</title>
+    <title>Car Racing v3.4</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 10px solid brown; }
@@ -400,10 +400,10 @@
             drawScore();
             drawHighScore();
             drawSpeed();
-            if (score > 50) drawAmmo();
+            if (score > 95) drawAmmo();
             requestAnimationFrame(update);
         }
-				
+
         function pauseGame() {
         		alert("Game Paused");
         }
