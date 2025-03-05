@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Racing v3.4</title>
+    <title>Car Racing v2.7</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 10px solid brown; }
@@ -51,6 +51,47 @@
             color: white;
         }
     </style>
+    <style>
+        .perk-container {
+            position: absolute;
+            left: 10px;
+            top: 50px;
+            font-size: 18px;
+            color: white;
+            text-align: left;
+        }
+        .perk-container h2 {
+            margin: 0 0 10px 0;
+        }
+        .perk-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 300px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+        }
+        .perk-option span {
+            padding: 5px 10px;
+            border-right: 2px solid white;
+            flex: 1;
+            text-align: center;
+        }
+        .perk-option button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: lightgray;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        .perk-option button:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <h1>Car Racing</h1>
@@ -91,6 +132,29 @@
             <button id="invisButton" onclick="purchaseSkin('invis', 1000)">Purchase</button>
         </div>
     </div>
+
+    <!-- Perk Store UI -->
+    <div class="perk-container">
+        <h2>Perks Store</h2>
+        <div class="perk-option">
+            <span>Faster Movement:<br>500 Bricks</span>
+            <button id="fasterMoveButton" onclick="purchasePerk('fasterMove', 500)">Purchase</button>
+        </div>
+        <!--<div class="perk-option">
+            <span>Extra Life:<br>1000 Bricks</span>
+            <button id="extraLifeButton" onclick="purchasePerk('extraLife', 1000)">Purchase</button>
+        </div>-->
+        <!--<div class="perk-option">
+            <span>Pacman Perk:<br>750 Bricks</span>
+            <button id="pacmanButton" onclick="purchasePerk('pacman', 750)">Purchase</button>
+        </div>-->
+        <div class="perk-option">
+            <span>Shoot after 50:<br>600 Bricks</span>
+            <button id="shootingButton" onclick="purchasePerk('shooting', 600)">Purchase</button>
+        </div>
+        <!--<h3>Selected Perks:</h3>
+        <p id="selectedPerks">None</p>-->
+    </div>
     <!-- Speed Slider -->
     <div class="speed-slider">
         <label for="speedRange">Speed Offset: <span id="speedValue">0.5</span></label>
@@ -103,7 +167,7 @@
         const greenBricksDisplay = document.getElementById("greenBricks");
 
         //Variables
-        let car, obstacles, amt, gameOver, score, speed, initialSpeed = 0.5, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
+        let car, obstacles, amt, gameOver, score, speed, moveSpeed, initialSpeed = 0.5, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
         let isMovingLeft, isMovingRight, isMovingUp, isMovingDown;
         let bullets, ammo;
 
@@ -113,6 +177,10 @@
         let carImage = new Image();
         carImage.src = 'bluecar.png';
 
+        let purchasedPerks = JSON.parse(localStorage.getItem("purchasedPerks")) || [];
+        let selectedPerks = [];
+        let usedExtraLife = false; // Track if extra life has been used in the current game
+
         function init() {
             //Main Game & Graphics
             car = {x: 183, y: 400, width: 33, height: 84, color: carSkin};
@@ -121,6 +189,7 @@
             gameOver = false;
             score = 0;
             speed = 1.5;
+            moveSpeed = 2.25;
             canDash = true;
             dashCooldown = 0.5;
             dashTimer = 0;
@@ -347,9 +416,9 @@
         function update() {
             // Handle continuous movement
             if (isMovingLeft && car.x > 0) {
-                car.x -= 2.25;
+                car.x -= moveSpeed;
             } if (isMovingRight && car.x < canvas.width - car.width) {
-                car.x += 2.25;
+                car.x += moveSpeed;
             } if (isMovingUp && car.y > 0 && score > 50) {
                 car.y -= 1.75;
             } if (isMovingDown && car.y < canvas.height - car.height && score > 50) {
@@ -364,6 +433,7 @@
             }
             
             if (score < 0) score = 0;
+            if (score > 95) canShoot = true;
             
             //Dash Timer
             if (!canDash) {
@@ -400,10 +470,10 @@
             drawScore();
             drawHighScore();
             drawSpeed();
-            if (score > 95) drawAmmo();
+            if (score > 0 && canShoot) drawAmmo();
             requestAnimationFrame(update);
         }
-
+				
         function pauseGame() {
         		alert("Game Paused");
         }
@@ -476,7 +546,7 @@
                 isMovingDown = true;
             }
 
-            if (e.key === " " && ammo > 0 && score > 95) {
+            if (e.key === " " && ammo > 0 && canShoot) {
                 spawnBullet();
             }
 
@@ -580,6 +650,78 @@
                 document.getElementById("invisButton").onclick = () => selectSkin("invis");
             }
         }
+
+        function selectPerk(perk) {
+            if (perk === "extraLife" && usedExtraLife) {
+                alert("Extra Life can only be used once per game!");
+                return;
+            }
+            
+            if (selectedPerks.includes(perk)) {
+                selectedPerks = selectedPerks.filter(p => p !== perk);
+                console.log(selectedPerks)
+            } else if (selectedPerks.length < 2) {
+                selectedPerks.push(perk);
+            } else {
+                alert("You can only select two perks at a time!");
+                return;
+            }
+            localStorage.setItem("selectedPerks", JSON.stringify(selectedPerks));
+            updatePerkUI();
+        }
+
+        function purchasePerk(perk, cost) {
+            if (greenBricks >= cost && !purchasedPerks.includes(perk)) {
+                greenBricks -= cost;
+                purchasedPerks.push(perk);
+                localStorage.setItem("greenBricks", greenBricks);
+                localStorage.setItem("purchasedPerks", JSON.stringify(purchasedPerks));
+                updatePerkUI();
+            } else {
+                alert("Not enough bricks or already purchased!");
+            }
+        }
+
+        function updatePerkUI() {
+            //document.getElementById("selectedPerks").innerText = selectedPerks.length ? selectedPerks.join(", ") : "None";
+            
+            document.querySelectorAll(".perk-option button").forEach(button => {
+                let perk = button.getAttribute("onclick").match(/'([^']+)'/)[1];
+                if (selectedPerks.includes(perk)) {
+                    button.innerText = "Selected";
+                    //button.color = "#4CAF50"
+                } else if (purchasedPerks.includes(perk)) {
+                    button.innerText = "Select";
+                    button.setAttribute("onclick", `selectPerk('${perk}')`);
+                }
+            });
+        }
+
+        updatePerkUI();
+
+        // Apply perks in the game loop
+        function applyPerks() {
+            moveSpeed = selectedPerks.includes("fasterMove") ? 3.5 : 2.25;
+            
+            if (selectedPerks.includes("extraLife") && gameOver && !usedExtraLife) {
+                gameOver = false;
+                car.y = 400;
+                score -= 10;
+                usedExtraLife = true;
+                selectedPerks = selectedPerks.filter(p => p !== "extraLife");
+                localStorage.setItem("selectedPerks", JSON.stringify(selectedPerks));
+                updatePerkUI();
+            }
+            
+            if (selectedPerks.includes("pacman")) {
+                if (car.x <= 0) car.x = canvas.width - car.width;
+                if (car.x >= canvas.width - car.width) car.x = 0;
+            }
+            
+            canShoot = selectedPerks.includes("shooting") && score > 50;
+        }
+
+        setInterval(applyPerks, 100);
 
         init();
         update();
