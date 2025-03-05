@@ -573,16 +573,16 @@
         //Smooth Movement
         document.addEventListener("keyup", (e) => {
             // Stop movement when the key is released
-            if (e.key === "ArrowLeft" || e.key === "a") {
+            if (e.key === "ArrowLeft" || e.key === "A") {
                 isMovingLeft = false;
             }
-            if (e.key === "ArrowRight" || e.key === "d") {
+            if (e.key === "ArrowRight" || e.key === "D") {
                 isMovingRight = false;
             }
-            if (e.key === "ArrowUp" || e.key === "w" && score > 50) {
+            if (e.key === "ArrowUp" || e.key === "W" && score > 50) {
                 isMovingUp = false;
             }
-            if (e.key === "ArrowDown" || e.key === "s" && score > 50) {
+            if (e.key === "ArrowDown" || e.key === "S" && score > 50) {
                 isMovingDown = false;
             }
         });
