@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Racing v2.7</title>
+    <title>Car Racing v3.6</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 10px solid brown; }
@@ -157,7 +157,7 @@
     </div>
     <!-- Speed Slider -->
     <div class="speed-slider">
-        <label for="speedRange">Speed Offset: <span id="speedValue">0.5</span></label>
+        <label for="speedRange">Initial Speed: <span id="speedValue">30</span> mph</label>
         <input type="range" id="speedRange" min="0" max="1.5" value="0.5" step="0.1" oninput="updateSpeed(this.value)">
     </div>
       <script>
@@ -245,7 +245,7 @@
             if (gameOver) {
                 initialSpeed = parseFloat(value);
             }
-            document.getElementById('speedValue').innerText = initialSpeed;
+            document.getElementById('speedValue').innerText = (1 + initialSpeed) * 20;
         }
 
         function drawCar() {
@@ -298,12 +298,12 @@
                 //Choose Brick Color
                 let color;
                 let brickVal = Math.random();
-                if ((score > 100 && score < 120) || (score > 120 && brickVal < 0.04)) {
+                if ((score >= 100 && score <= 120) || (score > 120 && brickVal < 0.04)) {
                     color = "purple"
                     width = 400
                     x = 0;
                 }
-                else if (score > 50 && brickVal < 0.04) {
+                else if (score >= 50 && brickVal < 0.04) {
                     color = "yellow";
                     width = 20;
                 } else if (brickVal < 0.2) {
@@ -351,7 +351,7 @@
                     bullet.x + bullet.width > obstacle.x &&
                     bullet.y < obstacle.y + obstacle.height &&
                     bullet.y + bullet.height > obstacle.y) {
-                        if ((obstacle.color === "purple" || obstacle.color === "red") && score > 95) {
+                        if ((obstacle.color === "purple" || obstacle.color === "red") && score >= 95) {
                             obstacles.splice(obstacles.indexOf(obstacle), 1);
                             bullets.splice(bullets.indexOf(bullet), 1);
                             score++;
@@ -419,9 +419,9 @@
                 car.x -= moveSpeed;
             } if (isMovingRight && car.x < canvas.width - car.width) {
                 car.x += moveSpeed;
-            } if (isMovingUp && car.y > 0 && score > 50) {
+            } if (isMovingUp && car.y > 0 && score >= 50) {
                 car.y -= 1.75;
-            } if (isMovingDown && car.y < canvas.height - car.height && score > 50) {
+            } if (isMovingDown && car.y < canvas.height - car.height && score >= 50) {
                 car.y += 1.75;
             }
             
@@ -433,7 +433,7 @@
             }
             
             if (score < 0) score = 0;
-            if (score > 95) canShoot = true;
+            if (score >= 95) canShoot = true;
             
             //Dash Timer
             if (!canDash) {
@@ -539,10 +539,10 @@
             if (e.key === "ArrowRight" || e.key === "d") {
                 isMovingRight = true;
             }
-            if ((e.key === "ArrowUp" || e.key === "w")) {
+            if ((e.key === "ArrowUp" || e.key === "w" && score >= 50)) {
                 isMovingUp = true;
             }
-            if ((e.key === "ArrowDown" || e.key === "s")) {
+            if ((e.key === "ArrowDown" || e.key === "s" && score >= 50)) {
                 isMovingDown = true;
             }
 
@@ -573,22 +573,22 @@
         //Smooth Movement
         document.addEventListener("keyup", (e) => {
             // Stop movement when the key is released
-            if (e.key === "ArrowLeft" || e.key === "A") {
+            if (e.key === "ArrowLeft" || e.key === "a") {
                 isMovingLeft = false;
             }
-            if (e.key === "ArrowRight" || e.key === "D") {
+            if (e.key === "ArrowRight" || e.key === "d") {
                 isMovingRight = false;
             }
-            if (e.key === "ArrowUp" || e.key === "W" && score > 50) {
+            if (e.key === "ArrowUp" || e.key === "w" && score >= 50) {
                 isMovingUp = false;
             }
-            if (e.key === "ArrowDown" || e.key === "S" && score > 50) {
+            if (e.key === "ArrowDown" || e.key === "s" && score >= 50) {
                 isMovingDown = false;
             }
         });
 
         function info() {
-            alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nNote: Up and Down only available\nwhen score is above 50.");
+            alert("Controls:\nLeft: A or <-\nRight: D or ->\nUp: W or ↑\nDown: S or ↓\nShift + [move] for TELEPORT\nSpace to shoot\n--------\nUp and Down only available\nwhen score is >= 50.\nShooting only available\nwhen score >= 95.");
         }
 
         //Skins
@@ -718,7 +718,7 @@
                 if (car.x >= canvas.width - car.width) car.x = 0;
             }
             
-            canShoot = selectedPerks.includes("shooting") && score > 50;
+            canShoot = selectedPerks.includes("shooting") && score >= 50;
         }
 
         setInterval(applyPerks, 100);
