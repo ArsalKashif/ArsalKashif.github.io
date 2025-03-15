@@ -52,8 +52,8 @@
     <div class="about">
         <p>AOV is a secure encryption method created by Arsal Kashif. It uses a key expansion algorithm to manipulate the key into generating offsets</p>
         <P>that modify the original plain text. To encrypt, simply enter in the plain text and the key and click encrypt. Decryption is just as easy,</p>
-        <p>but instead you enter the cipher text. Note that only characters with ASCII values from 32-126 are allowed, otherwise it will not work as</p>
-        <p>intended.</p>
+        <p>but instead you enter the cipher text. Note that only characters with ASCII values from 32-126 are encrypted, other characters are simply</p>
+        <p>ignored.</p>
     </div>
     
     <script>
@@ -88,7 +88,11 @@
                 let char = plain.substring(i, i+1);
                 let offset = char.charCodeAt(0) + offsets[i];
                 if (offset > 126) offset = (offset % 126) + 32;
-                cipher += String.fromCharCode(offset);
+                //ignore chars outside range
+                if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126)
+                	cipher += String.fromCharCode(offset);
+                else
+                	cipher += char;
             }
             return cipher;
         }
@@ -100,7 +104,11 @@
                 let char = cipher.substring(i, i+1);
                 let offset = char.charCodeAt(0) - offsets[i];
                 if (offset < 32) offset = 126 - 32 + offset;
-                plain += String.fromCharCode(offset);
+                //ignore chars outside range
+                if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126)
+                	plain += String.fromCharCode(offset);
+                else
+                	plain += char;
             }
             return plain;
         }
