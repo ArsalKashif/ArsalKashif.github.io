@@ -12,11 +12,21 @@
             background-color: #101510;
             color: #7dff79;
         }
-
+        
         h2 {
             font-size: 28px;
             margin-bottom: 10px;
             text-shadow: 0px 0px 5px #7dff79;
+        }
+        
+        #matrixCanvas {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: -1;
+          pointer-events: none; /* Prevents interaction */
         }
 
         .container {
@@ -30,7 +40,7 @@
         }
 
         textarea, input {
-            width: 100%;
+            width: 95%;
             margin: 10px 0;
             background-color: #193117;
             color: #50af4d;
@@ -61,12 +71,17 @@
         }
 
         .about {
-            margin-top: 20px;
-            font-size: 14px;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto 0;
+            background-color: #162015;
+            border: 1px solid #3a833c;
             padding: 15px;
-            background: #162015;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px #3a833c;
+            font-size: 16px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 0px 5px #50af4d;
+            text-shadow: 0px 0px 5px #7dff79;
         }
 
         .btn-container {
@@ -83,7 +98,8 @@
     </style>
 </head>
 <body>
-
+    
+    <canvas id="matrixCanvas"></canvas>
     <h2>ASCII Offset Values (AOV)</h2>
 
     <div class="container">
@@ -101,10 +117,52 @@
     </div>
 
     <div class="about">
-        <p><strong>About AOV:</strong> This encryption method, created by a Arsal Kashif, expands a key to generate unique offsets that modify the original text. Only ASCII values 32-126 are encrypted; others are ignored.</p>
+        <p><strong>About AOV:</strong> This encryption method, created by Arsal Kashif, expands a key to generate unique offsets that modify the original text. Only ASCII values 32-126 are encrypted; others are ignored.</p>
     </div>
 
     <script>
+    	//Matrix Effect
+        const canvas = document.getElementById("matrixCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        const columns = Math.floor(canvas.width / 20);
+        const drops = Array(columns).fill(0);
+        const characters = "1234567890膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中難金女月弓";
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#7dff79"; // Matrix text color
+            ctx.font = "18px monospace";
+
+            ctx.shadowColor = "#50af4d"; // Glow color
+            ctx.shadowBlur = 8; // Glow intensity
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters[Math.floor(Math.random() * characters.length)];
+                ctx.fillText(text, i * 20, drops[i] * 20);
+
+                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+
+            ctx.shadowBlur = 0; // Remove shadow after drawing
+        }
+
+        setInterval(drawMatrix, 50);
+        
+        //AOV SCRIPTS - CREATED BY ARSAL KASHIF
         function genOffsets(txt, key) {
             let keySum = 0n;
             let keyCon = "";
