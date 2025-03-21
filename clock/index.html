@@ -3,83 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Timer</title>
-    <style>
+    <title>AOV Encryption</title>
+    <style>  
         body {
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
+            font-family: "Courier New", monospace;
             text-align: center;
-            padding: 50px;
-            overflow: hidden;
-            margin: 0;
-            height: 85vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            margin: 20px;
+            background-color: #101510;
+            color: #7dff79;
         }
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
+        
+        h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0px 0px 5px #7dff79;
         }
+        
+        #matrixCanvas {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: -1;
+          pointer-events: none; /* Prevents interaction */
+        }
+
         .container {
-            background-color: rgba(90, 0, 0, 0.9);
-            border: 5px solid;
-            border-color: rgba(200, 50, 50 , 1);
+            width: 90%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #121610;
             padding: 20px;
-            display: inline-block;
-            border-radius: 20px;
-            position: relative;
-            box-shadow: 0 0 20px rgba(255, 80, 80, 1); /*Glow Effect*/
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px #50af4d;
         }
-        #current-time, #timer {
-            font-size: 40px;
-            font-weight: bold;
+
+        textarea, input {
+            width: 95%;
+            margin: 10px 0;
+            background-color: #193117;
+            color: #50af4d;
+            border: 1px solid #3a833c;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            resize: none;
         }
-        #current-period {
-            font-size: 50px;
+
+        button {
+            background-color: #408c43;
+            color: #7dff79;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 48%;
+            margin: 5px;
+            transition: 0.3s;
         }
-        .slider {
-            width: 20%;
-            margin-top: 20px;
+
+        button:hover {
+            background-color: #65c968;
+            box-shadow: 0px 0px 10px #65c968;
+        }
+
+        .about {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto 0;
+            background-color: #162015;
+            border: 1px solid #3a833c;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 0px 5px #50af4d;
+            text-shadow: 0px 0px 5px #7dff79;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 500px) {
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
+    
     <canvas id="matrixCanvas"></canvas>
+    <h2>ASCII Offset Values (AOV)</h2>
+
     <div class="container">
-        <h1 id="current-period">Loading...</h1>
-        <p id="current-time">Loading current time...</p>
-        <p id="timer">Loading...</p>
+        <textarea id="inputText" rows="3" placeholder="Enter text here..."></textarea>
+        <input type="text" id="key" placeholder="Enter key">
+        
+        <div class="btn-container">
+            <button onclick="encryptText()">Encrypt</button>
+            <button onclick="decryptText()">Decrypt</button>
+        </div>
+
+        <textarea id="outputText" rows="3" placeholder="Output" readonly></textarea>
+
+        <button onclick="clearAll()" style="width: 100%;">Clear All</button>
     </div>
-    <input type="range" id="colorSlider" class="slider" min="0" max="360" value="0">
+
+    <div class="about">
+        <p><strong>About AOV:</strong> This encryption method, created by Arsal Kashif, expands a key to generate unique offsets that modify the original text. Only ASCII values 32-126 are encrypted; others are ignored.</p>
+    </div>
 
     <script>
-        // Matrix Background Effect
+    		// Matrix Background Effect
         const canvas = document.getElementById("matrixCanvas");
         const ctx = canvas.getContext("2d");
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
 
         const columns = Math.floor(canvas.width / 20);
         const drops = Array(columns).fill(0);
-        const characters = "12345︎67890膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中難金女月弓";
-
-        let value = 0;
+        const characters = "1234567890膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中難金女月弓";
 
         function drawMatrix() {
             ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = matrixColor;
+            ctx.fillStyle = "#7dff79"; // Matrix text color
             ctx.font = "18px monospace";
 
-            ctx.shadowColor = matrixGlowColor; // Glow color
+            ctx.shadowColor = "#50af4d"; // Glow color
             ctx.shadowBlur = 8; // Glow intensity
 
             for (let i = 0; i < drops.length; i++) {
@@ -97,133 +161,79 @@
         }
 
         setInterval(drawMatrix, 50);
-
-        // Schedule Timer Script
-        function updateTimer() {
-            let t = new Date();
-            let d = t.getDay();
-            let h = t.getHours();
-            let m = t.getUTCMinutes();
-            let s = t.getUTCSeconds();
-            let now = cs(h, m, s);
-
-            let ampm = h >= 12 ? "PM" : "AM";
-            let mh = h % 12 || 12;
-
-            function pad(num) {
-                return num.toString().padStart(2, '0');
+    
+        function genOffsets(txt, key) {
+            let keySum = 0n;
+            let keyCon = "";
+            for (let i = 0; i < key.length; i++) {
+                keySum += BigInt(key.charCodeAt(i));
+                keyCon += key.charCodeAt(i);
             }
-            function cs(h, m, s) {
-                return h * 3600 + m * 60 + s;
-            }
-            function ct(ts) {
-                let m = Math.floor((ts % 3600) / 60);
-                let s = ts % 60;
-                return `${m}min ${s}sec`;
-            }
-
-            document.getElementById("current-time").innerText = `${pad(mh)}:${pad(m)}:${pad(s)} ${ampm}`;
-
-            let times = [];
-            let periodNames = [];
-            let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
-            let j = 0;
-
-            for (let i = startTime; i <= cs(15, 10, 0); ) {
-                j += 1;
-                if (d === 1 || d === 5) {
-                    times.push(i);
-                    periodNames.push("Period " + (j));
-                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
-                    times.push(i);
-                    periodNames.push("Passing Period");
-                    i += 6 * 60;
-                } else if (d === 3) {
-                    times.push(i);
-                    periodNames.push("Period " + (j));
-                    i += i === cs(12, 8, 0) ? 41 * 60 : 42 * 60;
-                    times.push(i);
-                    periodNames.push("Passing Period");
-                    i += 5 * 60;
-                } else if (d === 2 || d === 4 || d === 6 || d === 0) {
-                    times.push(i);
-                    periodNames.push("Period " + (j));
-                    i += 45 * 60;
-                    times.push(i);
-                    periodNames.push("Passing Period");
-                    i += 5 * 60;
-                    if (periodNames.length === 4) {
-                        times.push(i);
-                        periodNames.push("SOAR");
-                        i += 45 * 60;
-                        times.push(i);
-                        periodNames.push("Passing Period");
-                        i += 5 * 60;
-                    }
+            let keyValue = keySum * BigInt(parseInt(keyCon));
+            let expansion = keyValue.toString();
+            while (expansion.length < txt.length) {
+                while (keyValue < (2n**512n)) {
+                    keyValue += BigInt(keyValue**BigInt(4)/BigInt(3));
                 }
+                expansion += keyValue.toString();
+                keyValue = BigInt(keyValue.toString().substring(0, 32));
             }
-
-            let tl = "Unknown";
-            let currentPeriod = "Unknown";
-
-            if (d === 0 || d === 6) {
-                tl = "Enjoy your day!";
-                currentPeriod = "Weekend";
-            } else if (now > cs(15, 10, 0)) {
-                tl = `Enjoy your day!`;
-                currentPeriod = "School Ended";
-            } else if (now < startTime) {
-                tl = `Till start: ${ct(startTime - now)}`;
-                currentPeriod = "Before School";
-            } else {
-                for (let i = 0; i < times.length; i++) {
-                    if (now < times[i]) {
-                        tl = `${ct(times[i] - now)} left`;
-                        currentPeriod = periodNames[i - 1] || "Unknown";
-                        break;
-                    }
-                }
+            const offsets = [];
+            for (let i = 0; i < txt.length; i++) {
+                const slice = expansion.substring(i, i+2);
+                offsets.push(parseInt(slice, 10) % 94);
             }
-
-            document.getElementById("timer").innerText = tl;
-            document.getElementById("current-period").innerText = currentPeriod;
+            return offsets;
         }
 
-        updateTimer();
-        setInterval(updateTimer, 1000);
+        function encrypt(plain, key) {
+            let offsets = genOffsets(plain, key);
+            let cipher = "";
+            for (let i = 0; i < plain.length; i++) {
+                let char = plain.substring(i, i+1);
+                let offset = char.charCodeAt(0) + offsets[i];
+                if (offset > 126) offset = (offset % 126) + 32;
+                cipher += (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) ? String.fromCharCode(offset) : char;
+            }
+            return cipher;
+        }
 
-        window.addEventListener("resize", () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
+        function decrypt(cipher, key) {
+            let offsets = genOffsets(cipher, key);
+            let plain = "";
+            for (let i = 0; i < cipher.length; i++) {
+                let char = cipher.substring(i, i+1);
+                let offset = char.charCodeAt(0) - offsets[i];
+                if (offset < 32) offset = 126 - 32 + offset;
+                plain += (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) ? String.fromCharCode(offset) : char;
+            }
+            return plain;
+        }
 
-        // Slider for color change
-        const colorSlider = document.getElementById("colorSlider");
+        function encryptText() {
+            let inputText = document.getElementById("inputText").value;
+            let key = document.getElementById("key").value;
+            if (!key) { alert("Please enter a key"); return; }
+            document.getElementById("outputText").value = encrypt(inputText, key);
+        }
 
-        let matrixColor = "rgba(255, 0, 0, 1)";
-        let matrixGlowColor = "rgba(255, 80, 80, 1)";
+        function decryptText() {
+            let inputText = document.getElementById("inputText").value;
+            let key = document.getElementById("key").value;
+            if (!key) { alert("Please enter a key"); return; }
+            document.getElementById("outputText").value = decrypt(inputText, key);
+        }
 
-        colorSlider.addEventListener("input", (event) => {
-            const hue = event.target.value;
+        function clearAll() {
+            document.getElementById("inputText").value = "";
+            document.getElementById("key").value = "";
+            document.getElementById("outputText").value = "";
+        }
 
-            // Set color using hue from slider (0 - 360 degrees of the color wheel)
-            const containerColor = `hsl(${hue}, 100%, 20%)`; // Background of container
-            const borderColor = `hsl(${hue}, 100%, 50%)`; // Border color
-            const glowColor = `hsl(${hue}, 100%, 40%)`; // Glow effect color
-            const textColor = `hsl(${(hue + 180) % 360}, 100%, 80%)`; // Text color, complementary to background color
-
-            // Update container
-            document.querySelector(".container").style.backgroundColor = containerColor;
-            document.querySelector(".container").style.borderColor = borderColor;
-            document.querySelector(".container").style.boxShadow = `0 0 20px ${glowColor}`;
-
-            // Update matrix
-            matrixColor = `hsl(${hue}, 100%, 50%)`; // Matrix text color
-            matrixGlowColor = `hsl(${hue}, 100%, 40%)`; // Matrix glow color
-            
-            colorSlider.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
-
-        });
+        window.onbeforeunload = function () {
+            clearAll();
+        }
     </script>
+
 </body>
 </html>
