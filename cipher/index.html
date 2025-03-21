@@ -3,59 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AOV</title>
+    <title>AOV Encryption</title>
     <style>
         body {
             font-family: "Courier New", monospace;
             text-align: center;
             margin: 20px;
-            background-color: #121610;
+            background-color: #101510;
             color: #7dff79;
         }
+
+        h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0px 0px 5px #7dff79;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #121610;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px #50af4d;
+        }
+
         textarea, input {
-            width: 80%;
+            width: 100%;
             margin: 10px 0;
             background-color: #193117;
             color: #50af4d;
             border: 1px solid #3a833c;
-            padding: 5px;
-            font-family: "Courier New", monospace;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            resize: none;
         }
+
         button {
             background-color: #408c43;
             color: #7dff79;
             border: none;
-            padding: 10px;
+            padding: 12px;
             cursor: pointer;
             font-family: "Courier New", monospace;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 48%;
+            margin: 5px;
+            transition: 0.3s;
         }
+
         button:hover {
             background-color: #65c968;
+            box-shadow: 0px 0px 10px #65c968;
         }
+
         .about {
             margin-top: 20px;
-            font-size: 16px;
+            font-size: 14px;
+            padding: 15px;
+            background: #162015;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px #3a833c;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 500px) {
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <h2>ASCII Offset Values</h2>
-    <textarea id="inputText" placeholder="Enter text"></textarea><br>
-    <input type="text" id="key" placeholder="Enter key"><br>
-    <button onclick="encryptText()">Encrypt</button>
-    <button onclick="decryptText()">Decrypt</button><br>
-    <textarea id="outputText" placeholder="Output" readonly></textarea><br>
-    
-    <!-- Clear All Button -->
-    <button onclick="clearAll()">Clear All</button>
-    
-    <div class="about">
-        <p>AOV is a secure encryption method created by Arsal Kashif. It uses a key expansion algorithm to manipulate the key into generating offsets</p>
-        <P>that modify the original plain text. To encrypt, simply enter in the plain text and the key and click encrypt. Decryption is just as easy,</p>
-        <p>but instead you enter the cipher text. Note that only characters with ASCII values from 32-126 are encrypted, other characters are simply</p>
-        <p>ignored.</p>
+
+    <h2>ASCII Offset Values (AOV)</h2>
+
+    <div class="container">
+        <textarea id="inputText" rows="3" placeholder="Enter text here..."></textarea>
+        <input type="text" id="key" placeholder="Enter key">
+        
+        <div class="btn-container">
+            <button onclick="encryptText()">Encrypt</button>
+            <button onclick="decryptText()">Decrypt</button>
+        </div>
+
+        <textarea id="outputText" rows="3" placeholder="Output" readonly></textarea>
+
+        <button onclick="clearAll()" style="width: 100%;">Clear All</button>
     </div>
-    
+
+    <div class="about">
+        <p><strong>About AOV:</strong> This encryption method, created by a Arsal Kashif, expands a key to generate unique offsets that modify the original text. Only ASCII values 32-126 are encrypted; others are ignored.</p>
+    </div>
+
     <script>
         function genOffsets(txt, key) {
             let keySum = 0n;
@@ -80,7 +128,7 @@
             }
             return offsets;
         }
-        
+
         function encrypt(plain, key) {
             let offsets = genOffsets(plain, key);
             let cipher = "";
@@ -88,15 +136,11 @@
                 let char = plain.substring(i, i+1);
                 let offset = char.charCodeAt(0) + offsets[i];
                 if (offset > 126) offset = (offset % 126) + 32;
-                //ignore chars outside range
-                if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126)
-                	cipher += String.fromCharCode(offset);
-                else
-                	cipher += char;
+                cipher += (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) ? String.fromCharCode(offset) : char;
             }
             return cipher;
         }
-        
+
         function decrypt(cipher, key) {
             let offsets = genOffsets(cipher, key);
             let plain = "";
@@ -104,22 +148,18 @@
                 let char = cipher.substring(i, i+1);
                 let offset = char.charCodeAt(0) - offsets[i];
                 if (offset < 32) offset = 126 - 32 + offset;
-                //ignore chars outside range
-                if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126)
-                	plain += String.fromCharCode(offset);
-                else
-                	plain += char;
+                plain += (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) ? String.fromCharCode(offset) : char;
             }
             return plain;
         }
-        
+
         function encryptText() {
             let inputText = document.getElementById("inputText").value;
             let key = document.getElementById("key").value;
             if (!key) { alert("Please enter a key"); return; }
             document.getElementById("outputText").value = encrypt(inputText, key);
         }
-        
+
         function decryptText() {
             let inputText = document.getElementById("inputText").value;
             let key = document.getElementById("key").value;
@@ -127,17 +167,16 @@
             document.getElementById("outputText").value = decrypt(inputText, key);
         }
 
-        // Function to clear all fields
         function clearAll() {
             document.getElementById("inputText").value = "";
             document.getElementById("key").value = "";
             document.getElementById("outputText").value = "";
         }
 
-        // Clear fields when the tab is closed
         window.onbeforeunload = function () {
             clearAll();
         }
     </script>
+
 </body>
 </html>
