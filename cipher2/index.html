@@ -3,120 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Steganography</title>
+    <title>IO</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <style>
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background-color: #0a0f1e;
+            color: #b0c7e4;
             font-family: Arial, sans-serif;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background: #121a2a;
             padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(80, 120, 255, 0.5);
         }
         input, button {
             margin: 10px;
             padding: 10px;
-            border-radius: 5px;
             border: none;
+            border-radius: 5px;
             font-size: 16px;
         }
         input {
-            background-color: #333;
-            color: white;
+            background: #1a2338;
+            color: #b0c7e4;
         }
         button {
-            background-color: #6200ea;
-            color: white;
             cursor: pointer;
+            background: #4a69c6;
+            color: white;
+            transition: 0.3s;
         }
         button:hover {
-            background-color: #3700b3;
+            box-shadow: 0px 0px 10px rgba(80, 120, 255, 0.8);
         }
         canvas {
-            margin-top: 20px;
-            border: 2px solid #6200ea;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Image Steganography</h1>
-    <input type="file" id="upload">
-    <input type="text" id="message" placeholder="Enter message">
-    <button id="encode">Encode</button>
-    <button id="decode">Decode</button>
-    <button id="download">Download Image</button>
-    <canvas id="canvas"></canvas>
-    
-    <script>
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-        let stepSize = 3;
 
-        function loadImage(event) {
-            const img = new Image();
-            img.onload = () => {
+<div class="container">
+    <h1>Image Obfuscation</h1>
+    <input type="file" id="file" accept="image/png, image/jpeg">
+    <input type="text" id="key" placeholder="Enter Key">
+    <button onclick="processImage('encrypt')">Encrypt</button>
+    <button onclick="processImage('decrypt')">Decrypt</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    function generateSeed(key) {
+        let keySum = 0n;
+        let keyConcat = "";
+        for (let char of key) {
+            let v = BigInt(char.charCodeAt(0));
+            keySum += v;
+            keyConcat += v.toString();
+        }
+        return (keySum * BigInt(keyConcat) % BigInt(2 ** 32)).toString();
+    }
+
+    async function processImage(action) {
+        let key = document.getElementById("key").value;
+        let fileInput = document.getElementById("file").files[0];
+        if (!key || !fileInput) {
+            alert("Please enter a key and select an image.");
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (event) {
+            let img = new Image();
+            img.onload = function () {
+                let canvas = document.getElementById("canvas");
+                let ctx = canvas.getContext("2d");
+
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
+
+                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let data = imageData.data;
+
+                let rng = new Math.seedrandom(generateSeed(key));
+
+                for (let i = 0; i < data.length; i++) {
+                    if (i % 4 !== 3) { // Skip alpha channel
+                        if (action === "encrypt") {
+                            data[i] = (data[i] + Math.floor(rng() * 256)) % 256;
+                        } else {
+                            data[i] = (data[i] - Math.floor(rng() * 256) + 256) % 256;
+                        }
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+
+                let link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
+                link.download = `${action.toUpperCase()}-${Date.now()}.png`;
+                link.click();
             };
-            img.src = URL.createObjectURL(event.target.files[0]);
-        }
+            img.src = event.target.result;
+        };
 
-        function encodeMessage() {
-            const text = document.getElementById("message").value;
-            if (!text) return alert("Enter a message to encode.");
-            
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const pixels = imgData.data;
-            let index = 0;
-            
-            for (let i = 0; i < text.length; i++) {
-                const charCode = text.charCodeAt(i);
-                pixels[index] = charCode;
-                pixels[index + 1] = stepSize;
-                index += stepSize * 4;
-            }
-            
-            // Mark end of message with a black pixel (0,0,0)
-            if (index < pixels.length - 4) {
-                pixels[index] = 0;
-                pixels[index + 1] = 0;
-                pixels[index + 2] = 0;
-            }
-            
-            ctx.putImageData(imgData, 0, 0);
-            alert("Message encoded!");
-        }
+        reader.readAsDataURL(fileInput);
+    }
+</script>
 
-        function decodeMessage() {
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const pixels = imgData.data;
-            let index = 0, message = "";
-            
-            while (index < pixels.length) {
-                const charCode = pixels[index];
-                if (charCode === 0 && pixels[index + 1] === 0 && pixels[index + 2] === 0) break;
-                message += String.fromCharCode(charCode);
-                stepSize = pixels[index + 1];
-                index += stepSize * 4;
-            }
-            
-            alert("Decoded Message: " + message);
-        }
-
-        function downloadImage() {
-            const link = document.createElement("a");
-            link.download = "encoded-image.png";
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-
-        document.getElementById("upload").addEventListener("change", loadImage);
-        document.getElementById("encode").addEventListener("click", encodeMessage);
-        document.getElementById("decode").addEventListener("click", decodeMessage);
-        document.getElementById("download").addEventListener("click", downloadImage);
-    </script>
 </body>
 </html>
