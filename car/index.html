@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Racing v3.6</title>
+    <title>Car Racing v3.6.1</title>
     <style>
         body { text-align: center; background: #222; color: white; }
         canvas { background: gray; display: block; margin: auto; border: 10px solid brown; }
@@ -169,7 +169,7 @@
         //Variables
         let car, obstacles, amt, gameOver, score, speed, moveSpeed, initialSpeed = 0.5, dashCooldown, dashTimer, highestScore, greenBricks, roadLines;
         let isMovingLeft, isMovingRight, isMovingUp, isMovingDown;
-        let bullets, ammo;
+        let bullets, ammo, canShoot;
 
         //Car and Skins
         let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
@@ -205,6 +205,7 @@
             //Shooting
             bullets = [];
             ammo = 0;
+	    canShoot = false;
 
 	        if (greenBricks > 1000000) {
                 //Glitches -> Remove all skins and reset bricks to 0.
@@ -718,8 +719,6 @@
                 if (car.x <= 0) car.x = canvas.width - car.width;
                 if (car.x >= canvas.width - car.width) car.x = 0;
             }
-            
-            //canShoot = selectedPerks.includes("shooting") && score >= 50;
         }
 
         setInterval(applyPerks, 100);
