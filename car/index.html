@@ -351,7 +351,7 @@
                     bullet.x + bullet.width > obstacle.x &&
                     bullet.y < obstacle.y + obstacle.height &&
                     bullet.y + bullet.height > obstacle.y) {
-                        if ((obstacle.color === "purple" || obstacle.color === "red") && score >= 95) {
+                        if ((obstacle.color === "purple" || obstacle.color === "red") && canShoot) {
                             obstacles.splice(obstacles.indexOf(obstacle), 1);
                             bullets.splice(bullets.indexOf(bullet), 1);
                             score++;
@@ -433,6 +433,7 @@
             }
             
             if (score < 0) score = 0;
+	    if (score >= 50 && selectedPerks.includes("shooting")) canShoot = true;
             if (score >= 95) canShoot = true;
             
             //Dash Timer
@@ -718,7 +719,7 @@
                 if (car.x >= canvas.width - car.width) car.x = 0;
             }
             
-            canShoot = selectedPerks.includes("shooting") && score >= 50;
+            //canShoot = selectedPerks.includes("shooting") && score >= 50;
         }
 
         setInterval(applyPerks, 100);
