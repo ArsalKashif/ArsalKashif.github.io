@@ -157,26 +157,47 @@
                 drops[i]++;
             }
 
-            ctx.shadowBlur = 0; // Remove shadow after drawing
+            ctx.shadowBlur = 0;
         }
 
         setInterval(drawMatrix, 50);
         
-        //AOV SCRIPTS - CREATED BY ARSAL KASHIF
+        /*
+        Main AOV Scripts:
+        Originally written in python by ARSAL KASHIF
+        Translated in javascript by ARSAL KASHIF
+        Commented by ARSAL KASHIF (on 4.8.2025)
+
+        Note:
+        Version 1 has a problem where similar
+        keys would generate the same offsets
+        for small pieces of text.
+        */
+
+        //MAIN METHODS--------------------------------------------------------------------
+
+        //genOffsets -> Helper Function used by both Encrypt and Decrypt
+        //Generates the actual values that shift the text into "random noise"
         function genOffsets(txt, key) {
-            let keySum = 0n;
-            let keyCon = "";
+            //Get basic values from the key
+            let keySum = 0n; //Sum of ASCII Values
+            let keyCon = ""; //Concatenation of ASCII Values
             for (let i = 0; i < key.length; i++) {
                 keySum += BigInt(key.charCodeAt(i));
                 keyCon += key.charCodeAt(i);
             }
             let keyValue = keySum * BigInt(parseInt(keyCon));
+            //Key expansion algorithm
+            //Goal is to maintain a relatively small number to expand
+            //Values will not exceed ~2^525 to prevent using too much memory
             let expansion = keyValue.toString();
             while (expansion.length < txt.length) {
                 while (keyValue < (2n**512n)) {
                     keyValue += BigInt(keyValue**BigInt(4)/BigInt(3));
                 }
                 expansion += keyValue.toString();
+                //If more expansion is needed, the keyValue is changed
+                //And the algorithm runs again.
                 keyValue = BigInt(keyValue.toString().substring(0, 32));
             }
             const offsets = [];
@@ -186,30 +207,42 @@
             }
             return offsets;
         }
-
+        
+        //encrypt -> method to add the offsets
         function encrypt(plain, key) {
             let offsets = genOffsets(plain, key);
             let cipher = "";
             for (let i = 0; i < plain.length; i++) {
                 let char = plain.substring(i, i+1);
                 let offset = char.charCodeAt(0) + offsets[i];
-                if (offset > 126) offset = (offset % 126) + 32;
-                cipher += (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) ? String.fromCharCode(offset) : char;
+                if (offset > 126) offset = (offset % 126) + 32; //spill front
+                if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+                    cipher += String.fromCharCode(offset);
+                } else { //ignore ascii values outside range of 32-126
+                    cipher += char;
+                }
             }
             return cipher;
         }
-
+        
+        //decrypt -> method to subtract the offsets
         function decrypt(cipher, key) {
             let offsets = genOffsets(cipher, key);
             let plain = "";
             for (let i = 0; i < cipher.length; i++) {
                 let char = cipher.substring(i, i+1);
                 let offset = char.charCodeAt(0) - offsets[i];
-                if (offset < 32) offset = 126 - 32 + offset;
-                plain += (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) ? String.fromCharCode(offset) : char;
+                if (offset < 32) offset = 126 - 32 + offset; //spill back
+                if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+                    plain += String.fromCharCode(offset);
+                } else { //ignore ascii values outside range of 32-126
+                    plain += char;
+                }
             }
             return plain;
         }
+
+        //--------------------------------------------------------------------------------
 
         function generateRandomKey() {
             const chars = [];
