@@ -81,9 +81,54 @@
             background: rgba(255, 255, 255, 0.4);
             transform: scale(1.05);
         }
+
+        #corner-img {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            z-index: 2;
+            transition: transform 0.2s ease;
+        }
+
+        .wobble {
+            animation: wobble 0.4s;
+        }
+
+        #click-message {
+            position: fixed;
+            bottom: 90px; /* Above the image */
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            z-index: 2;
+        }
+
+        #click-message.show {
+            opacity: 1;
+        }
+
+        @keyframes wobble {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(3deg); }
+            100% { transform: rotate(0deg); }
+        }
+
     </style>
 </head>
 <body>
+    <img src="corner.png" alt="Clickable Icon" id="corner-img">
+    <div id="click-message">Stop clicking me!</div>
     <div class="container">
         <h1>AK's Website</h1>
         <p>Small projects and useful tools!</p>
@@ -98,7 +143,47 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             console.log("Website Loaded!");
+            
+            //Make it into a full on clicker...!
+            let clickCount = 0;
+            const cornerImg = document.getElementById('corner-img');
+            const messageBox = document.getElementById('click-message');
+    
+            const messages = {
+                1: "So, do you like this website?",
+                2: "Nice, nice.",
+                3: "AOV is the best part",
+                4: "Img Obfuscation is also cool!",
+                5: "Okay, you done clicking me?",
+                10: "I’m serious.",
+                20: "Bro… why…",
+                25: "That’s it. Blocked.",
+                30: "Just kidding :)",
+                35: "I can't do that...",
+                40: "SADLY!",
+            };
+    
+            cornerImg.addEventListener('click', () => {
+                clickCount++;
+    
+                // Wobble effect
+                cornerImg.classList.add('wobble');
+                setTimeout(() => {
+                    cornerImg.classList.remove('wobble');
+                }, 400);
+    
+                // Show message if one is defined for this click count
+                if (messages[clickCount]) {
+                    messageBox.textContent = messages[clickCount];
+                    messageBox.classList.add('show');
+
+                    setTimeout(() => {
+                        messageBox.classList.remove('show');
+                    }, 3141);
+                }
+            });
         });
     </script>
+    
 </body>
 </html>
