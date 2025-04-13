@@ -70,6 +70,25 @@
             box-shadow: 0px 0px 10px #65c968;
         }
 
+        .toggle-btn {
+            background-color: #101510;
+            color: #7dff79;
+            border: 1px solid #50af4d;
+            padding: 10px 20px;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            border-radius: 8px;
+            margin: 10px auto;
+            display: block;
+            cursor: pointer;
+            box-shadow: 0 0 8px #50af4d;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background-color: #162015;
+        }
+
         .about {
             width: 90%;
             max-width: 600px;
@@ -82,6 +101,33 @@
             text-align: center;
             box-shadow: 0px 0px 5px #50af4d;
             text-shadow: 0px 0px 5px #7dff79;
+        }
+
+        .code-viewer {
+            width: 90%;
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: #0a0f0a;
+            color: #7dff79;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: "Courier New", monospace;
+            text-align: left;
+            box-shadow: 0 0 10px #50af4d;
+            overflow-x: auto;
+        }
+
+        .code-viewer h3 {
+            margin-top: 0;
+            font-size: 20px;
+            text-align: center;
+            text-shadow: 0 0 5px #7dff79;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         .btn-container {
@@ -100,7 +146,7 @@
 <body>
     
     <canvas id="matrixCanvas"></canvas>
-    <h2>ASCII Offset Values (AOV)</h2>
+    <h2>ASCII Offset Values 2 (AOV2)</h2>
 
     <div class="container">
         <textarea id="inputText" rows="3" placeholder="Enter text here..."></textarea>
@@ -119,6 +165,84 @@
     <div class="about">
         <p><strong>About AOV:</strong> This encryption method, created by Arsal Kashif, expands a key to generate unique offsets that modify the original text. Only ASCII values 32-126 are encrypted; others are ignored.</p>
     </div>
+
+    <div class="code-toggle-container">
+        <button onclick="toggleCode()" class="toggle-btn">Show JavaScript Source</button>
+        
+        <div id="codeViewer" class="code-viewer" style="display: none;">
+            <h3>JavaScript Source (AOV)</h3>
+            <pre><code>
+            //genOffsets -> Helper Function used by both Encrypt and Decrypt
+            //Generates the actual values that shift the text into "random noise"
+            function genOffsets(txt, key) {
+                //Get basic values from the key
+                let keySum = 0n; //Sum of ASCII Values
+                let keyCon = ""; //Concatenation of ASCII Values
+                for (let i = 0; i < key.length; i++) {
+                    keySum += BigInt(key.charCodeAt(i));
+                    keyCon += key.charCodeAt(i);
+                }
+                let keyValue = keySum * BigInt(parseInt(keyCon));
+                //Key expansion algorithm
+                //Goal is to maintain a relatively small number to expand
+                //Values will not exceed ~2^525 to prevent using too much memory
+                let counter = 0; //ensures expansion algorithm is run once
+                let expansion = keyValue.toString();
+                while (counter < 1 || expansion.length < txt.length) {
+                    counter++;
+                    while (keyValue < (2n**512n)) {
+                        keyValue += BigInt(keyValue**BigInt(4)/BigInt(3));
+                    }
+                    expansion += keyValue.toString();
+                    //If more expansion is needed, the keyValue is changed
+                    //And the algorithm runs again.
+                    keyValue = BigInt(keyValue.toString().substring(0, 32));
+                }
+                const offsets = [];
+                for (let i = 0; i < txt.length; i++) {
+                    const slice = expansion.substring(i, i+2);
+                    offsets.push(parseInt(slice, 10) % 94);
+                }
+                counter = 0;
+                return offsets;
+            }
+            
+            //encrypt -> method to add the offsets
+            function encrypt(plain, key) {
+                let offsets = genOffsets(plain, key);
+                let cipher = "";
+                for (let i = 0; i < plain.length; i++) {
+                    let char = plain.substring(i, i+1);
+                    let offset = char.charCodeAt(0) + offsets[i];
+                    if (offset > 126) offset = (offset % 126) + 32; //spill front
+                    if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+                        cipher += String.fromCharCode(offset);
+                    } else { //ignore ascii values outside range of 32-126
+                        cipher += char;
+                    }
+                }
+                return cipher;
+            }
+            
+            //decrypt -> method to subtract the offsets
+            function decrypt(cipher, key) {
+                let offsets = genOffsets(cipher, key);
+                let plain = "";
+                for (let i = 0; i < cipher.length; i++) {
+                    let char = cipher.substring(i, i+1);
+                    let offset = char.charCodeAt(0) - offsets[i];
+                    if (offset < 32) offset = 126 - 32 + offset; //spill back
+                    if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+                        plain += String.fromCharCode(offset);
+                    } else { //ignore ascii values outside range of 32-126
+                        plain += char;
+                    }
+                }
+                return plain;
+            }
+            </code></pre>
+        </div>
+    </div>        
 
     <script>
     	//Matrix Effect
@@ -190,8 +314,10 @@
             //Key expansion algorithm
             //Goal is to maintain a relatively small number to expand
             //Values will not exceed ~2^525 to prevent using too much memory
+            let counter = 0; //ensures expansion algorithm is run once
             let expansion = keyValue.toString();
-            while (expansion.length < txt.length) {
+            while (counter < 1 || expansion.length < txt.length) {
+                counter++;
                 while (keyValue < (2n**512n)) {
                     keyValue += BigInt(keyValue**BigInt(4)/BigInt(3));
                 }
@@ -205,6 +331,7 @@
                 const slice = expansion.substring(i, i+2);
                 offsets.push(parseInt(slice, 10) % 94);
             }
+            counter = 0;
             return offsets;
         }
         
@@ -277,6 +404,19 @@
             document.getElementById("inputText").value = "";
             document.getElementById("key").value = "";
             document.getElementById("outputText").value = "";
+        }
+
+        function toggleCode() {
+            const viewer = document.getElementById("codeViewer");
+            const btn = document.querySelector(".toggle-btn");
+
+            if (viewer.style.display === "none") {
+                viewer.style.display = "block";
+                btn.textContent = "Hide JavaScript Source";
+            } else {
+                viewer.style.display = "none";
+                btn.textContent = "Show JavaScript Source";
+            }
         }
 
         window.onbeforeunload = function () {
