@@ -1,76 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Saver</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            text-align: center;
-        }
-        textarea {
-            width: 80%;
-            height: 100px;
-        }
-        #savedText {
-            margin-top: 20px;
-            white-space: pre-wrap;
-            border: 1px solid #ccc;
-            padding: 10px;
-            width: 80%;
-            display: inline-block;
-            min-height: 50px;
-            text-align: left;
-        }
-        #lastWipe {
-            margin-top: 10px;
-            font-style: italic;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Notes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      padding: 20px;
+    }
+    #noteInput {
+      width: 300px;
+      padding: 8px;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    #addNoteBtn {
+      padding: 8px 12px;
+      background-color: #555;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #2e2e2e;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 4px;
+    }
+    .noteText {
+      flex-grow: 1;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: #aaa;
+      margin-left: 10px;
+    }
+    .deleteBtn {
+      background: transparent;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Save Your Text</h1>
-    <textarea id="textInput" placeholder="Write something..."></textarea><br>
-    <button onclick="saveText()">Save</button>
-    <h2>Saved Text:</h2>
-    <div id="savedText"></div>
-    <p id="lastWipe">Date of last wipe: Not wiped yet</p>
+  <h2>Notes</h2>
+  <input type="text" id="noteInput" placeholder="Type your note here..." />
+  <button id="addNoteBtn">Add Note</button>
+  <ul id="noteList"></ul>
 
-    <script>
-        function saveText() {
-            const text = document.getElementById("textInput").value.trim();
-            if (text === "") {
-                alert("Text cannot be empty!");
-                return;
-            }
-            if (text.length > 50) {
-                alert("Text cannot be longer than 50 characters!");
-                return;
-            }
-            if (text === "/wipe{all}/") {
-                localStorage.removeItem("savedEntries");
-                let wipeDate = new Date().toLocaleString();
-                localStorage.setItem("lastWipe", wipeDate);
-            } else {
-                let entries = JSON.parse(localStorage.getItem("savedEntries")) || [];
-                let timestamp = new Date().toLocaleString();
-                entries.push(`**Entry ${timestamp}:** ${text}`);
-                localStorage.setItem("savedEntries", JSON.stringify(entries));
-            }
-            document.getElementById("textInput").value = "";
-            displayText();
-        }
-        
-        function displayText() {
-            const savedEntries = JSON.parse(localStorage.getItem("savedEntries")) || [];
-            document.getElementById("savedText").innerHTML = savedEntries.length > 0 ? savedEntries.join("<br><br>") : "No text saved yet.";
-            const lastWipe = localStorage.getItem("lastWipe") || "Not wiped yet";
-            document.getElementById("lastWipe").textContent = `Date of last wipe: ${lastWipe}`;
-        }
-        
-        document.addEventListener("DOMContentLoaded", displayText);
-    </script>
+  <script>
+    const addNoteBtn = document.getElementById('addNoteBtn');
+    const noteInput = document.getElementById('noteInput');
+    const noteList = document.getElementById('noteList');
+
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+
+    function saveNotes() {
+      localStorage.setItem('notes', JSON.stringify(notes));
+    }
+
+    function formatDateTime() {
+      const now = new Date();
+      return now.toLocaleString();
+    }
+
+    function renderNotes() {
+      noteList.innerHTML = '';
+      notes.forEach((note, index) => {
+        const li = document.createElement('li');
+
+        const span = document.createElement('span');
+        span.className = 'noteText';
+        span.textContent = note.text;
+
+        const timestamp = document.createElement('span');
+        timestamp.className = 'timestamp';
+        timestamp.textContent = note.time;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'deleteBtn';
+        deleteBtn.textContent = 'X';
+        deleteBtn.onclick = () => {
+          notes.splice(index, 1);
+          saveNotes();
+          renderNotes();
+        };
+
+        li.appendChild(span);
+        li.appendChild(timestamp);
+        li.appendChild(deleteBtn);
+        noteList.appendChild(li);
+      });
+    }
+
+    addNoteBtn.addEventListener('click', () => {
+      const text = noteInput.value.trim();
+      if (text) {
+        const newNote = {
+          text,
+          time: formatDateTime()
+        };
+        notes.push(newNote);
+        saveNotes();
+        renderNotes();
+        noteInput.value = '';
+      }
+    });
+
+    noteInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addNoteBtn.click();
+      }
+    });
+
+    // Initial render
+    renderNotes();
+  </script>
 </body>
 </html>
