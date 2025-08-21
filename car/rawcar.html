@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC</title>
+    <style>
+        body { text-align: center; background: #222; color: white; }
+        canvas { background: gray; display: block; margin: auto; border: 10px solid brown; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+    <style>
+        
+    </style>
+</head>
+<body>
+    <h1>RC</h1>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <p id="highScore"></p>
+    
+      <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const highScoreDisplay = document.getElementById("highScore");
+
+        //Variables
+        let car, obstacles, amt, gameOver, score, speed, moveSpeed, dashCooldown, dashTimer, highestScore, roadLines;
+        let isMovingLeft, isMovingRight, isMovingUp, isMovingDown;
+        let bullets, ammo, canShoot;
+
+        //Car and Skins
+        let carSkin = localStorage.getItem("selectedSkin") || "blue"; 
+        let purchasedSkins = JSON.parse(localStorage.getItem("purchasedSkins")) || ["blue"];
+        let carImage = new Image();
+        carImage.src = 'bluecar.png';
+
+        function mulberry32(a) {
+            return function() {
+                var t = a += 0x6D2B79F5;
+                t = Math.imul(t ^ (t >>> 15), t | 1);
+                t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            }
+        }
+
+        let seed = 12345; // you can set this to any number or get it from user input
+        let random = mulberry32(seed); // random() now generates numbers 0–1 deterministically
+
+        function init() {
+            //Main Game & Graphics
+            car = {x: 183, y: 400, width: 33, height: 84, color: carSkin};
+            obstacles = [];
+            roadLines = [];
+            gameOver = false;
+            score = 0;
+            speed = 1.5;
+            moveSpeed = 2.25;
+            canDash = true;
+            dashCooldown = 0.5;
+            dashTimer = 0;
+            highestScore = localStorage.getItem("highScore") || 0;
+            
+            //Prevent bugs
+            isMovingLeft = false;
+            isMovingRight = false;
+            isMovingUp = false;
+            isMovingDown = false;
+            
+            //Shooting
+            bullets = [];
+            ammo = 0;
+	    canShoot = false;
+
+            // Initialize road lines
+            for (let i = 0; i < 6; i++) {
+                roadLines.push({ x: canvas.width / 2 - 10, y: i * 100 - 50, height: 40 });
+            }
+        }
+
+        function drawRoadLines() {
+            ctx.fillStyle = "rgb(230, 230, 210)";
+            for (let i = 0; i < roadLines.length; i++) {
+                ctx.fillRect(roadLines[i].x, roadLines[i].y, 15, roadLines[i].height);
+            }
+        }
+
+        function updateRoadLines() {
+            for (let i = 0; i < roadLines.length; i++) {
+                roadLines[i].y += speed;
+
+                // If a road line goes out of the canvas, reset its position
+                if (roadLines[i].y > canvas.height) {
+                    roadLines[i].y = 0
+                }
+            }
+        }
+
+        function updateSpeed(value) {
+            document.getElementById('speedValue').innerText = (1.5) * 20;
+        }
+
+        function drawCar() {
+            ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = obstacle.color;
+
+                // Apply a slight glow to the obstacles
+                if (obstacle.color === "yellow") ctx.shadowColor = "rgba(255, 255, 0, 0.6)";
+                else if (obstacle.color === "green") ctx.shadowColor = "rgba(0, 200, 0, 0.6)";
+                else if (obstacle.color === "red") ctx.shadowColor = "rgba(255, 0, 0, 0.6)";
+
+                ctx.shadowBlur = 5; //Glow size
+                ctx.shadowOffsetX = 0; // No offset in the X direction
+                ctx.shadowOffsetY = 0; // No offset in the Y direction
+
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.shadowColor = "transparent";
+            });
+        }
+
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += speed;
+                if (obstacle.y > 250 && obstacle.color == "yellow") {
+                    obstacles.splice(obstacles.indexOf(obstacle),1);
+                    score -= 5;
+                }
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(obstacles.indexOf(obstacle), 1);
+                    if (obstacle.color === "green") {
+                        if (score > 0) score--;
+                    } else if (obstacle.color === "red") {
+                        score++;
+                    }
+                }
+            });
+                    
+            if (score > 140) amt = 0.06;
+            else if (score > 80) amt = 0.04;
+            else amt = 0.02;
+            
+            if (random() < amt) {
+                let width = random() * 60 + 30;
+                let x = random() * (canvas.width - width);
+
+                //Choose Brick Color
+                let color;
+                let brickVal = random();
+                if ((score >= 100 && score <= 120) || (score > 120 && brickVal < 0.04)) {
+                    color = "purple"
+                    width = 400
+                    x = 0;
+                }
+                else if (score >= 50 && brickVal < 0.04) {
+                    color = "yellow";
+                    width = 20;
+                } else if (brickVal < 0.2) {
+                    color = "green";
+                } else color = "red"
+                obstacles.push({x, y: -20, width, height: 15, color });
+            }
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (car.x < obstacle.x + obstacle.width &&
+                    car.x + car.width > obstacle.x &&
+                    car.y < obstacle.y + obstacle.height &&
+                    car.y + car.height > obstacle.y) {
+
+                    if (obstacle.color === "green") {
+                        score++;
+                        ammo++;
+                        ammo++;
+                    } else if (obstacle.color === "yellow") {
+                        score += 10;
+                    } else {
+                        gameOver = true;
+                        if (score > highestScore) {
+                            highestScore = score;
+                            localStorage.setItem("highScore", highestScore);
+                        }
+                    }
+                    obstacles.splice(obstacles.indexOf(obstacle), 1);
+                }
+
+                bullets.forEach(bullet => {
+                    if (bullet.x < obstacle.x + obstacle.width &&
+                    bullet.x + bullet.width > obstacle.x &&
+                    bullet.y < obstacle.y + obstacle.height &&
+                    bullet.y + bullet.height > obstacle.y) {
+                        if ((obstacle.color === "purple" || obstacle.color === "red") && canShoot) {
+                            obstacles.splice(obstacles.indexOf(obstacle), 1);
+                            bullets.splice(bullets.indexOf(bullet), 1);
+                            score++;
+                        } else {
+                            bullets.splice(bullets.indexOf(bullet), 1);
+                        }
+                    }
+                });
+            });
+        }
+
+        function spawnBullet() {
+            if (ammo > 0) {
+                ammo -= 1;
+                let x = car.x + 8;
+                let y = car.y;
+                bullets.push({x, y, width: 15, height: 15, color: "orange"});
+            }
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function updateBullets() {
+            bullets.forEach(bullet => {
+                bullet.y -= 5;
+                if (bullet.y < 0) {
+                    bullets.splice(bullets.indexOf(bullet),1);
+                }
+            });
+        }
+
+        function drawScore() {
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText("Score: " + score, 10, 30);
+        }
+
+        function drawHighScore() {
+            ctx.fillStyle = "yellow";
+            ctx.font = "18px Arial";
+            ctx.fillText("High Score: " + highestScore, 10, 55);
+        }
+
+        function drawSpeed() {
+            ctx.fillStyle = "white";
+            ctx.font = "18px Arial";
+            ctx.fillText("Speed: " + Math.round(speed * 20, 2) + "mph", 10, 80);
+        }
+
+        function drawAmmo() {
+            ctx.fillStyle = "orange";
+            ctx.font = "20px Arial";
+            ctx.fillText("Ammo: " + ammo, 300, 30);
+        }
+
+        function update() {
+            // Handle continuous movement
+            if (isMovingLeft && car.x > 0) {
+                car.x -= moveSpeed;
+            } if (isMovingRight && car.x < canvas.width - car.width) {
+                car.x += moveSpeed;
+            } if (isMovingUp && car.y > 0 && score >= 50) {
+                car.y -= 1.75;
+            } if (isMovingDown && car.y < canvas.height - car.height && score >= 50) {
+                car.y += 1.75;
+            }
+            
+            //Determine Speed
+            if (score < 50) {
+                speed = (0.05 * score + 1) ** 0.5 + 0.5;
+            } else {
+                speed = (0.1 * score + 1) ** 0.5 + 0.5;
+            }
+            
+            if (score < 0) score = 0;
+            if (score >= 95) canShoot = true;
+            
+            //Dash Timer
+            if (!canDash) {
+                if (dashTimer > 0) {
+                    dashTimer--;
+                } else {
+                    canDash = true;
+                }
+            }
+            
+            //Game Over
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "red";
+                ctx.font = "30px Arial";
+                ctx.fillText("Game Over!", 110, 200);
+                ctx.fillStyle = "white";
+                ctx.fillText("Score: " + score, 140, 250);
+                ctx.fillText("R to Restart", 115, 300);
+                return;
+            }
+
+            //Update
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRoadLines();
+            updateRoadLines();
+	        drawCar();
+            drawObstacles();
+            updateObstacles();
+            drawBullets()
+            updateBullets()
+            checkCollision();
+            drawScore();
+            drawHighScore();
+            drawSpeed();
+            if (score > 0 && canShoot) drawAmmo();
+            requestAnimationFrame(update);
+        }
+				
+        function pauseGame() {
+        		alert("Game Paused");
+        }
+        
+        function restartGame() {
+            if (gameOver) {
+                init();
+                update();
+            }
+        }
+
+        function genSave() {
+            let save = "";
+            save += ":HS:" + highestScore;
+
+            let seed = ((highestScore % 100) * 1009) ** 2 % 10**9;
+            seed = seed.toString().repeat(12);
+
+            let offset;
+            let eSave = "";         
+            for (let i = 0; i < save.length; i++) {
+                let charCode = save.charCodeAt(i); // Get ASCII value of character
+                let seedCharCode = seed.charCodeAt(i % seed.length); // Get corresponding seed character ASCII value
+                let newCharCode = charCode + 1 + (seedCharCode % 4); // Add a small offset from seed
+                eSave += String.fromCharCode(newCharCode); // Convert back to character and append
+            }
+            eSave = highestScore + ":" + eSave;
+
+            alert("Save Code [UNUSED]:\n" + eSave);
+            return eSave;
+        }
+
+        function loadSave(eSave) {
+            let colonIndex = eSave.indexOf(":");
+            if (colonIndex === -1) return null; // Invalid save format
+
+            let highestScore = parseInt(eSave.substring(0, colonIndex)); // Extract highest score
+            let eData = eSave.substring(colonIndex + 1); // Encrypted data
+
+            let seed = ((highestScore % 100) * 1009) ** 2 % 10**9;
+            seed = seed.toString().repeat(12);
+
+            let save = "";
+            for (let i = 0; i < eData.length; i++) {
+                let charCode = eData.charCodeAt(i); // Get ASCII value of encrypted character
+                let seedCharCode = seed.charCodeAt(i % seed.length); // Get corresponding seed character ASCII value
+                let originalCharCode = charCode - 1 - (seedCharCode % 4); // Reverse the encoding process
+                save += String.fromCharCode(originalCharCode); // Convert back to character and append
+            }
+
+            console.log(save);
+            return save;
+        }
+
+
+        document.addEventListener("keydown", (e) => {
+            // Start movement when the key is pressed down
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                isMovingLeft = true;
+            }
+            if (e.key === "ArrowRight" || e.key === "d") {
+                isMovingRight = true;
+            }
+            if ((e.key === "ArrowUp" || e.key === "w" && score >= 50)) {
+                isMovingUp = true;
+            }
+            if ((e.key === "ArrowDown" || e.key === "s" && score >= 50)) {
+                isMovingDown = true;
+            }
+
+            if (e.key === " " && ammo > 0 && canShoot) {
+                spawnBullet();
+            }
+
+            if (e.key === "r") restartGame();
+            if (e.key === "p") pauseGame();
+            if (e.key === "e") genSave();
+
+            //Dashing
+            if (e.shiftKey) {
+                if (e.key === "ArrowLeft" || e.key === "A") {
+                    if (!canDash) score -= 5;
+                    car.x = 0;
+                    canDash = false;
+                    dashTimer = dashCooldown * 60;
+                } else if (e.key === "ArrowRight" || e.key === "D") {
+                    if (!canDash) score -= 5;
+                    car.x = canvas.width - car.width;
+                    canDash = false;
+                    dashTimer = dashCooldown * 60;
+                }
+            }
+        });
+
+        //Smooth Movement
+        document.addEventListener("keyup", (e) => {
+            // Stop movement when the key is released
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                isMovingLeft = false;
+            }
+            if (e.key === "ArrowRight" || e.key === "d") {
+                isMovingRight = false;
+            }
+            if (e.key === "ArrowUp" || e.key === "w" && score >= 50) {
+                isMovingUp = false;
+            }
+            if (e.key === "ArrowDown" || e.key === "s" && score >= 50) {
+                isMovingDown = false;
+            }
+        });
+
+        init();
+        update();
+  </script>
+</body>
+</html>
