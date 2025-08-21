@@ -43,10 +43,12 @@
             }
         }
 
-        let seed = 12345; // you can set this to any number or get it from user input
-        let random = mulberry32(seed); // random() now generates numbers 0–1 deterministically
+        let seed = 1;
+        let random;
 
         function init() {
+            random = mulberry32(seed);
+
             //Main Game & Graphics
             car = {x: 183, y: 400, width: 33, height: 84, color: carSkin};
             obstacles = [];
@@ -58,7 +60,7 @@
             canDash = true;
             dashCooldown = 0.5;
             dashTimer = 0;
-            highestScore = localStorage.getItem("highScore") || 0;
+            highestScore = localStorage.getItem("rh-" + seed) || 0;
             
             //Prevent bugs
             isMovingLeft = false;
@@ -179,10 +181,6 @@
                         score += 10;
                     } else {
                         gameOver = true;
-                        if (score > highestScore) {
-                            highestScore = score;
-                            localStorage.setItem("highScore", highestScore);
-                        }
                     }
                     obstacles.splice(obstacles.indexOf(obstacle), 1);
                 }
@@ -238,7 +236,7 @@
         function drawHighScore() {
             ctx.fillStyle = "yellow";
             ctx.font = "18px Arial";
-            ctx.fillText("High Score: " + highestScore, 10, 55);
+            ctx.fillText("HS-" + seed + ":" + highestScore, 10, 55);
         }
 
         function drawSpeed() {
@@ -284,6 +282,11 @@
                 }
             }
             
+            if (score > highestScore) {
+                highestScore = score;
+                localStorage.setItem("rh-" + seed, highestScore);
+            }
+
             //Game Over
             if (gameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -325,49 +328,16 @@
             }
         }
 
-        function genSave() {
-            let save = "";
-            save += ":HS:" + highestScore;
-
-            let seed = ((highestScore % 100) * 1009) ** 2 % 10**9;
-            seed = seed.toString().repeat(12);
-
-            let offset;
-            let eSave = "";         
-            for (let i = 0; i < save.length; i++) {
-                let charCode = save.charCodeAt(i); // Get ASCII value of character
-                let seedCharCode = seed.charCodeAt(i % seed.length); // Get corresponding seed character ASCII value
-                let newCharCode = charCode + 1 + (seedCharCode % 4); // Add a small offset from seed
-                eSave += String.fromCharCode(newCharCode); // Convert back to character and append
+        function setSeed() {
+            if (gameOver) {
+                let inputSeed = prompt("Enter a seed (1-1000):");
+                if (inputSeed !== null) {
+                    seed = parseInt(inputSeed);
+                    if (isNaN(seed)) seed = 1; //default
+                    if (seed < 1 || seed > 1000) seed = 1; //range
+                }
             }
-            eSave = highestScore + ":" + eSave;
-
-            alert("Save Code [UNUSED]:\n" + eSave);
-            return eSave;
         }
-
-        function loadSave(eSave) {
-            let colonIndex = eSave.indexOf(":");
-            if (colonIndex === -1) return null; // Invalid save format
-
-            let highestScore = parseInt(eSave.substring(0, colonIndex)); // Extract highest score
-            let eData = eSave.substring(colonIndex + 1); // Encrypted data
-
-            let seed = ((highestScore % 100) * 1009) ** 2 % 10**9;
-            seed = seed.toString().repeat(12);
-
-            let save = "";
-            for (let i = 0; i < eData.length; i++) {
-                let charCode = eData.charCodeAt(i); // Get ASCII value of encrypted character
-                let seedCharCode = seed.charCodeAt(i % seed.length); // Get corresponding seed character ASCII value
-                let originalCharCode = charCode - 1 - (seedCharCode % 4); // Reverse the encoding process
-                save += String.fromCharCode(originalCharCode); // Convert back to character and append
-            }
-
-            console.log(save);
-            return save;
-        }
-
 
         document.addEventListener("keydown", (e) => {
             // Start movement when the key is pressed down
@@ -390,7 +360,7 @@
 
             if (e.key === "r") restartGame();
             if (e.key === "p") pauseGame();
-            if (e.key === "e") genSave();
+            if (e.key === "s") setSeed();
 
             //Dashing
             if (e.shiftKey) {
@@ -426,6 +396,7 @@
         });
 
         init();
+        random = mulberry32(seed);
         update();
   </script>
 </body>
