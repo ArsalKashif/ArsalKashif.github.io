@@ -48,10 +48,30 @@
             width: 20%;
             margin-top: 20px;
         }
+        #new-site-button {
+            position: absolute; /* Position relative to the body */
+            top: 20px;          /* 20px from the top */
+            right: 20px;        /* 20px from the right */
+            padding: 10px 15px;
+            background-color: rgba(50, 50, 200, 0.8); /* A nice blue color */
+            border: 2px solid rgba(100, 100, 255, 1);
+            color: white;
+            text-decoration: none; /* Remove underline from the link */
+            font-weight: bold;
+            border-radius: 10px;
+            z-index: 10;         /* Make sure it's above the matrix canvas */
+            transition: background-color 0.3s;
+        }
+        #new-site-button:hover {
+            background-color: rgba(100, 100, 255, 0.9);
+        }
     </style>
 </head>
 <body>
     <canvas id="matrixCanvas"></canvas>
+    <a id="new-site-button" href="https://arsalkashif.github.io/clock/new" target="_blank">
+        Click Me!
+    </a>
     <div class="container">
         <h1 id="current-period">Loading...</h1>
         <p id="current-time">Loading current time...</p>
@@ -109,13 +129,16 @@
 
             let ampm = h >= 12 ? "PM" : "AM";
             let mh = h % 12 || 12;
-
+            
+            //adds 0 to num < 10
             function pad(num) {
                 return num.toString().padStart(2, '0');
             }
+            //convert hms to sec
             function cs(h, m, s) {
                 return h * 3600 + m * 60 + s;
             }
+            //converts sec to ms
             function ct(ts) {
                 let m = Math.floor((ts % 3600) / 60);
                 let s = ts % 60;
@@ -131,20 +154,35 @@
 
             for (let i = startTime; i <= cs(15, 10, 0); ) {
                 j += 1;
+                //MONDAY, FRIDAY
                 if (d === 1 || d === 5) {
                     times.push(i);
                     periodNames.push("Period " + (j));
-                    i += i === cs(8, 41, 0) ? 53 * 60 : 50 * 60;
+                    
+                    if (i === cs(8, 41, 0)) {
+                        i += 53 * 60;
+                    } else {
+                        i += 50 * 60;
+                    }
+                    
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 6 * 60;
+                //WEDNESDAY
                 } else if (d === 3) {
                     times.push(i);
                     periodNames.push("Period " + (j));
-                    i += i === cs(12, 8, 0) ? 41 * 60 : 42 * 60;
+                    
+                    if (i === cs(12, 8, 0)) {
+                        i += 41 * 60;
+                    } else {
+                        i += 42 * 60;
+                    }
+
                     times.push(i);
                     periodNames.push("Passing Period");
                     i += 5 * 60;
+                //TUESDAY, THURSDAY
                 } else if (d === 2 || d === 4 || d === 6 || d === 0) {
                     times.push(i);
                     periodNames.push("Period " + (j));
