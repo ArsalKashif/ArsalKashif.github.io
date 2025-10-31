@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Timer</title>
+<style>
+    body {
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        overflow: hidden;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+
+    .container {
+        width: 350px;
+        height: 350px;
+        background-color: rgba(90, 0, 0, 0.9);
+        border: 5px solid rgba(200, 50, 50 , 1);
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 0 30px rgba(255, 80, 80, 1);
+        text-align: center;
+        position: relative;
+    }
+
+    #current-period {
+        font-family: 'Courier New', monospace;
+        font-size: 40px;
+        font-weight: bold;
+    }
+
+    #timer {
+        font-family: 'Courier New', monospace;
+        font-size: 90px;
+        font-weight: bold;
+    }
+
+    #current-day {
+        font-family: 'Courier New', monospace;
+        font-size: 40px;
+        font-weight: bold;
+    }
+
+    #colorSliderCanvas {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 400px;
+        height: 400px;
+        transform: translate(-50%, -50%);
+        pointer-events: auto;
+        z-index: 1;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="matrixCanvas"></canvas>
+
+<div class="container">
+    <div id="current-period">Loading...</div>
+    <div id="timer">Loading...</div>
+    <div id="current-day">Loading day...</div>
+    <canvas id="colorSliderCanvas"></canvas>
+</div>
+
+<script>
+    // ---------------- MATRIX BACKGROUND ----------------
+    const canvas = document.getElementById("matrixCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const columns = Math.floor(canvas.width / 20);
+    const drops = Array(columns).fill(0);
+    const characters = "12345︎67890膽拉灣戰對這岩次合心手田水口廿卜山戈人心日尸木火土竹十大中難金女月弓";
+
+    let matrixColor = "rgba(255, 0, 0, 1)";
+    let matrixGlowColor = "rgba(255, 80, 80, 1)";
+
+    function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = matrixColor;
+        ctx.font = "18px monospace";
+
+        ctx.shadowColor = matrixGlowColor;
+        ctx.shadowBlur = 8;
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = characters[Math.floor(Math.random() * characters.length)];
+            ctx.fillText(text, i * 20, drops[i] * 20);
+
+            if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+
+        ctx.shadowBlur = 0;
+    }
+
+    setInterval(drawMatrix, 50);
+
+    window.addEventListener("resize", () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    // ---------------- SCHEDULE TIMER ----------------
+    function updateTimer() {
+        let t = new Date();
+        let d = t.getDay();
+        let h = t.getHours();
+        let m = t.getMinutes();
+        let s = t.getSeconds();
+        let now = cs(h, m, s);
+
+        function cs(h, m, s) { return h * 3600 + m * 60 + s; }
+        function ct(ts) {
+            let mm = Math.floor((ts % 3600) / 60);
+            let ss = ts % 60;
+            return `${mm}min ${ss}sec`;
+        }
+
+        let times = [];
+        let periodNames = [];
+        let startTime = d === 3 ? cs(9, 0, 0) : cs(7, 45, 0);
+        let j = 0;
+
+        for (let i = startTime; i <= cs(15, 10, 0); ) {
+            j += 1;
+            //MONDAY, FRIDAY
+            if (d === 1 || d === 5) {
+                times.push(i);
+                periodNames.push("Period " + (j));
+                
+                if (i === cs(8, 41, 0)) {
+                    i += 53 * 60;
+                } else {
+                    i += 50 * 60;
+                }
+                
+                times.push(i);
+                periodNames.push("Passing Period");
+                i += 6 * 60;
+            //WEDNESDAY
+            } else if (d === 3) {
+                times.push(i);
+                periodNames.push("Period " + (j));
+                
+                if (i === cs(12, 8, 0)) {
+                    i += 41 * 60;
+                } else {
+                    i += 42 * 60;
+                }
+
+                times.push(i);
+                periodNames.push("Passing Period");
+                i += 5 * 60;
+            //TUESDAY, THURSDAY
+            } else if (d === 2 || d === 4 || d === 6 || d === 0) {
+                times.push(i);
+                periodNames.push("Period " + (j));
+                i += 45 * 60;
+                times.push(i);
+                periodNames.push("Passing Period");
+                i += 5 * 60;
+                if (periodNames.length === 4) {
+                    times.push(i);
+                    periodNames.push("SOAR");
+                    i += 45 * 60;
+                    times.push(i);
+                    periodNames.push("Passing Period");
+                    i += 5 * 60;
+                }
+            }
+        }
+
+        let tl = "Unknown"; let currentPeriod = "Unknown";
+
+        if (d === 0 || d === 6) { tl = "Enjoy"; currentPeriod="Weekend"; }
+        else if (now > cs(15,10,0)) { tl = "Enjoy"; currentPeriod="After"; }
+        else if (now < startTime) { tl = `Till start: ${ct(startTime - now)}`; currentPeriod="Before"; }
+        else {
+            for (let i=0;i<times.length;i++){
+                if(now<times[i]){
+                    tl = `${ct(times[i]-now)} left`;
+                    currentPeriod = periodNames[i-1]||"Unknown";
+                    break;
+                }
+            }
+        }
+
+        document.getElementById("current-period").innerText = currentPeriod;
+
+        let parts = tl.match(/(\d+)min (\d+)sec/);
+        if(parts){
+            let mm = parts[1].padStart(2,'0');
+            let ss = parts[2].padStart(2,'0');
+            document.getElementById("timer").innerText = `${mm}:${ss}`;
+        } else {
+            document.getElementById("timer").innerText = tl;
+        }
+
+        let options = { weekday: 'long'};
+        document.getElementById("current-day").innerText = t.toLocaleDateString(undefined, options);
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+
+    // ---------------- CIRCULAR COLOR SLIDER ----------------
+    const sliderCanvas = document.getElementById("colorSliderCanvas");
+    const sliderCtx = sliderCanvas.getContext("2d");
+    sliderCanvas.width = sliderCanvas.height = 400;
+
+    let hue = 0; // initial hue
+    function drawCircularSlider() {
+        sliderCtx.clearRect(0,0,400,400);
+        let center=200, radius=178;
+
+        // Background circle
+        sliderCtx.beginPath();
+        sliderCtx.arc(center,center,radius,0,2*Math.PI);
+        sliderCtx.strokeStyle='rgba(0, 0, 0, 0)';
+        sliderCtx.lineWidth=10;
+        sliderCtx.stroke();
+
+        // Hue arc
+        sliderCtx.beginPath();
+        sliderCtx.arc(center,center,radius,-Math.PI/2,-Math.PI/2 + 2*Math.PI*hue/360);
+        sliderCtx.strokeStyle=`hsl(${hue},100%,50%)`;
+        sliderCtx.lineWidth=10;
+        sliderCtx.stroke();
+
+        // Knob
+        let angle = -Math.PI/2 + 2*Math.PI*hue/360;
+        let knobX = center + radius * Math.cos(angle);
+        let knobY = center + radius * Math.sin(angle);
+
+        sliderCtx.beginPath();
+        sliderCtx.arc(knobX,knobY,8,0,2*Math.PI);
+        sliderCtx.fillStyle=`hsl(${hue},100%,50%)`;
+        sliderCtx.fill();
+    }
+
+    drawCircularSlider();
+
+    let dragging=false;
+    sliderCanvas.addEventListener('mousedown',()=>dragging=true);
+    window.addEventListener('mouseup',()=>dragging=false);
+
+    sliderCanvas.addEventListener('mousemove',(e)=>{
+        if(!dragging) return;
+
+        const rect = sliderCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left - 200;
+        const y = e.clientY - rect.top - 200;
+        hue = Math.atan2(y,x)*180/Math.PI + 90;
+        if(hue<0) hue+=360;
+
+        const containerColor = `hsl(${hue},100%,20%)`;
+        const borderColor = `hsl(${hue},100%,50%)`;
+        const glowColor = `hsl(${hue},100%,40%)`;
+
+        document.querySelector(".container").style.backgroundColor = containerColor;
+        document.querySelector(".container").style.borderColor = borderColor;
+        document.querySelector(".container").style.boxShadow = `0 0 30px ${glowColor}`;
+
+        matrixColor = `hsl(${hue},100%,50%)`;
+        matrixGlowColor = `hsl(${hue},100%,40%)`;
+
+        drawCircularSlider();
+    });
+
+</script>
+</body>
+</html>
