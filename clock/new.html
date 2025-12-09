@@ -162,7 +162,7 @@
                 }
                 
                 times.push(i);
-                periodNames.push("Passing Period");
+                periodNames.push("Passing");
                 i += 6 * 60;
             //WEDNESDAY
             } else if (d === 3) {
@@ -176,7 +176,7 @@
                 }
 
                 times.push(i);
-                periodNames.push("Passing Period");
+                periodNames.push("Passing");
                 i += 5 * 60;
             //TUESDAY, THURSDAY
             } else if (d === 2 || d === 4 || d === 6 || d === 0) {
@@ -184,7 +184,7 @@
                 periodNames.push("Period " + (j));
                 i += 45 * 60;
                 times.push(i);
-                periodNames.push("Passing Period");
+                periodNames.push("Passing");
                 i += 5 * 60;
                 if (periodNames.length === 4) {
                     times.push(i);
