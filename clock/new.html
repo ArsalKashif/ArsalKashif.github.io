@@ -136,6 +136,8 @@
         let s = t.getSeconds();
         let now = cs(h, m, s);
 
+        if (t.getFullYear() === 2026 && t.getMonth() === 1 && t.getDate() === 3) d = 1;
+
         function cs(h, m, s) { return h * 3600 + m * 60 + s; }
         function ct(ts) {
             let mm = Math.floor((ts % 3600) / 60);
