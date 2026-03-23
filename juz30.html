@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juz 30</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --text: #ffffff;
+            --secondary: #444444;
+            --accent-glow: rgba(255, 255, 255, 0.12);
+            --border: #222222;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 220px;
+            border-right: 1px solid var(--border);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            background: #050505;
+        }
+
+        .remaining-count {
+            font-size: 0.75rem;
+            letter-spacing: 0.15rem;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #pool-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            scrollbar-width: none;
+        }
+        #pool-list::-webkit-scrollbar { display: none; }
+
+        .pool-item { padding: 4px 0; }
+
+        /* Main Area */
+        #main {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Session Counter Bottom Left */
+        #session-display {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #222; /* Very subtle */
+        }
+
+        /* The Glow Circle */
+        .glow-container {
+            width: 480px;
+            height: 480px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 80px 10px var(--accent-glow);
+        }
+
+        #current-surah {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            letter-spacing: -0.02em;
+            text-align: center;
+            min-height: 1.2em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        button {
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            padding: 14px 28px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.95); }
+
+        button.undo-btn {
+            background: transparent;
+            color: #555;
+            border: 1px solid #222;
+            visibility: hidden;
+        }
+
+        button.undo-btn.visible { visibility: visible; }
+        button.undo-btn:hover { color: white; border-color: white; }
+
+        .empty-msg { font-style: italic; opacity: 0.3; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div id="counter" class="remaining-count">0 REMAINING</div>
+        <div id="pool-list"></div>
+    </div>
+
+    <div id="main">
+        <div id="session-display">1</div>
+        <div class="glow-container">
+            <div id="current-surah"> </div>
+            <div class="controls">
+                <button id="undo" class="undo-btn" onclick="undoPick()">Undo</button>
+                <button onclick="pickSurah()">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fullJuz = [
+            {id: 78, name: "An-Naba"}, {id: 79, name: "An-Nazi'at"}, {id: 80, name: "Abasa"},
+            {id: 81, name: "At-Takwir"}, {id: 82, name: "Al-Infitar"}, {id: 83, name: "Al-Mutaffifin"},
+            {id: 84, name: "Al-Inshiqaq"}, {id: 85, name: "Al-Buruj"}, {id: 86, name: "At-Tariq"},
+            {id: 87, name: "Al-A'la"}, {id: 88, name: "Al-Ghashiyah"}, {id: 89, name: "Al-Fajr"},
+            {id: 90, name: "Al-Balad"}, {id: 91, name: "Ash-Shams"}, {id: 92, name: "Al-Lail"},
+            {id: 93, name: "Ad-Duha"}, {id: 94, name: "Ash-Sharh"}, {id: 95, name: "At-Tin"},
+            {id: 96, name: "Al-Alaq"}, {id: 97, name: "Al-Qadr"}, {id: 98, name: "Al-Bayyinah"},
+            {id: 99, name: "Az-Zalzalah"}, {id: 100, name: "Al-Adiyat"}, {id: 101, name: "Al-Qari'ah"},
+            {id: 102, name: "At-Takathur"}, {id: 103, name: "Al-Asr"}, {id: 104, name: "Al-Humazah"},
+            {id: 105, name: "Al-Fil"}, {id: 106, name: "Quraish"}, {id: 107, name: "Al-Ma'un"},
+            {id: 108, name: "Al-Kauthar"}, {id: 109, name: "Al-Kafirun"}, {id: 110, name: "An-Nasr"},
+            {id: 111, name: "Al-Masad"}, {id: 112, name: "Al-Ikhlas"}, {id: 113, name: "Al-Falaq"},
+            {id: 114, name: "An-Nas"}
+        ];
+
+        let pool = JSON.parse(localStorage.getItem('surahPool')) || [...fullJuz];
+        let lastPicked = JSON.parse(localStorage.getItem('lastPicked')) || null;
+        let sessionCount = parseInt(localStorage.getItem('sessionCount')) || 1;
+
+        function updateUI() {
+            const listEl = document.getElementById('pool-list');
+            const counterEl = document.getElementById('counter');
+            const sessionEl = document.getElementById('session-display');
+            const undoBtn = document.getElementById('undo');
+            
+            listEl.innerHTML = '';
+            counterEl.innerText = `${pool.length} REMAINING`;
+            sessionEl.innerText = sessionCount;
+
+            const sortedPool = [...pool].sort((a, b) => a.id - b.id);
+
+            if (pool.length === 0) {
+                listEl.innerHTML = '<div class="empty-msg">All completed</div>';
+            } else {
+                sortedPool.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'pool-item';
+                    div.innerText = `${s.id}. ${s.name}`;
+                    listEl.appendChild(div);
+                });
+            }
+            
+            if (lastPicked) {
+                undoBtn.classList.add('visible');
+            } else {
+                undoBtn.classList.remove('visible');
+            }
+
+            localStorage.setItem('surahPool', JSON.stringify(pool));
+            localStorage.setItem('lastPicked', JSON.stringify(lastPicked));
+            localStorage.setItem('sessionCount', sessionCount);
+        }
+
+        function pickSurah() {
+            if (pool.length === 0) {
+                pool = [...fullJuz];
+                lastPicked = null;
+                sessionCount++;
+                document.getElementById('current-surah').innerText = "Session " + sessionCount;
+            } else {
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                lastPicked = pool.splice(randomIndex, 1)[0];
+                document.getElementById('current-surah').innerText = `${lastPicked.id}. ${lastPicked.name}`;
+            }
+            updateUI();
+        }
+
+        function undoPick() {
+            if (lastPicked) {
+                pool.push(lastPicked);
+                lastPicked = null;
+                document.getElementById('current-surah').innerText = " ";
+                updateUI();
+            }
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
