@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QMT</title>
+
+  <style>
+    /* Load local custom font */
+    @font-face {
+      font-family: 'quransamplefont';
+      src: url('quransamplefont.ttf') format('truetype'),
+           url('quransamplefont.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Reset & Black Theme */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'quransamplefont', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 60px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Outer Wrapper */
+    .mushaf-wrapper {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Top Controls Bar */
+    .top-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* Centered Page Number */
+    .page-number-toggle {
+      cursor: pointer;
+      font-weight: 500;
+      user-select: none;
+      transition: color 0.2s ease;
+      font-size: 20px;
+      color: #d4af37;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .page-number-toggle:hover { color: #ffffff; }
+
+    /* Fancy Dual Decorative Border */
+    .mushaf-frame {
+      border: 3px double #d4af37;
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+    }
+
+    .mushaf-inner-frame {
+      border: 1px solid #443311;
+      padding: 25px 20px;
+      background-color: #050505;
+    }
+
+    /* Inline Bismillah Header */
+    .bismillah-header {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-align-last: center;
+      font-family: 'quransamplefont', serif;
+      font-size: 32px;
+      color: #e6c667;
+      margin: 15px 0 20px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+      user-select: none;
+    }
+
+    /* Lined Quran Text Container.
+       IMPORTANT: this class is now applied to each individual text SEGMENT
+       (the text between Bismillah headers), not to the whole page container.
+       That way the repeating line-grid background always starts fresh at the
+       top of each segment, instead of drifting out of sync with the actual
+       text lines whenever a Bismillah header (whose height isn't a clean
+       multiple of the line-height) is inserted above it. This is what fixes
+       the "gray lines cutting through text" issue. */
+    .quran-text {
+      font-family: 'quransamplefont';
+      font-size: 38px;
+      line-height: 2.6;
+      color: #f1f1f1;
+      background-image: linear-gradient(to bottom, transparent calc(100% - 1px), rgba(255, 255, 255, 0.15) 1px);
+      background-size: 100% 2.6em;
+      text-align: justify;
+      text-align-last: center;
+    }
+
+    /* Interactive Elements */
+    .q-word, .q-space, .q-ayah-marker {
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      position: relative;
+    }
+
+    .q-word:hover, .q-ayah-marker:hover {
+      color: #d4af37;
+      background-color: rgba(212, 175, 55, 0.1);
+    }
+
+    .q-space {
+      display: inline-block;
+      min-width: 12px;
+    }
+    .q-space:hover { background-color: rgba(212, 175, 55, 0.3); }
+
+    .q-ayah-marker {
+      display: inline-block;
+      margin: 0 4px;
+      color: #888888;
+      font-size: 28px;
+      vertical-align: middle;
+      user-select: none;
+    }
+
+    /* Ayah number overlay. The circle glyph (U+06DD) in this font has no unicode-mapped
+       ligature that combines it with a following digit into one "number inside circle"
+       shape, so instead the digit is drawn as its own small element, absolutely positioned
+       dead-center on top of the circle glyph. A plain system font is used for the digits
+       (not the Quran font) so they render as clean small numerals rather than whatever
+       stylized digit shapes the Quran font itself might use. */
+    .ayah-number {
+      position: absolute;
+      top: 54.5%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+      color: #888888;
+      pointer-events: none;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* Triple-digit ayah numbers (e.g. 111) need to be shrunk/tightened slightly further
+       so they still fit inside the circle rather than spilling past its edges. */
+    .ayah-number-wide {
+      font-size: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .q-ayah-marker:hover .ayah-number {
+      color: #d4af37;
+    }
+
+    /* Mistake Highlights */
+    .mistake-word, .mistake-letter, .mistake-ayah {
+      color: #ff4b4b !important;
+      text-decoration: underline;
+      text-decoration-color: #ff4b4b;
+      text-decoration-thickness: 2px;
+    }
+
+    .mistake-space {
+      background-color: rgba(255, 75, 75, 0.4) !important;
+      min-width: 15px;
+    }
+
+    .mistake-marker {
+      color: #ff4b4b !important;
+      text-shadow: 0 0 8px rgba(255, 75, 75, 0.5);
+    }
+    .mistake-marker .ayah-number {
+      color: #ff4b4b;
+    }
+
+    /* Inserted Letter Indicator: an overlay line drawn ON TOP of the word, positioned by
+       measuring where the gap falls. The underlying Arabic text is never split into extra
+       nodes, so letter joining/shaping is completely unaffected. */
+    .mistake-insertion {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background-color: #ff4b4b;
+      box-shadow: 0 0 4px rgba(255, 75, 75, 0.6);
+      pointer-events: none;
+    }
+
+    .flash-highlight { animation: flashObj 1s ease-out; }
+    @keyframes flashObj {
+      0% { background-color: rgba(255, 255, 255, 0.8); color: #000; }
+      100% { background-color: transparent; }
+    }
+
+    /* Edge Navigation Arrows.
+       z-index raised above the mistakes panel (200) and io panel (250) so a long
+       list of mistakes can never visually cover / block clicking these buttons. */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #333333;
+      color: #ffffff;
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      z-index: 300;
+    }
+    .nav-arrow:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); border-color: #666666; }
+    .nav-arrow:disabled { opacity: 0.15; cursor: not-allowed; }
+    .nav-arrow.next { left: 20px; }
+    .nav-arrow.prev { right: 20px; }
+
+    /* Mistakes Sidebar (Top Left) */
+    .mistakes-panel {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 280px;
+      background: rgba(15, 15, 15, 0.95);
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: system-ui, sans-serif;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      max-height: 80vh;
+      overflow-y: auto;
+      direction: ltr;
+    }
+
+    .mistakes-panel h3 {
+      font-size: 14px;
+      color: #d4af37;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mistake-item {
+      background: #1a1a1a;
+      border-left: 3px solid #ff4b4b;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .mistake-info { cursor: pointer; flex-grow: 1; }
+    .mistake-info:hover strong { color: #ff6b6b; }
+    .mistake-text { display: block; color: #aaa; font-size: 11px; margin-top: 2px; font-family: 'quransamplefont', sans-serif;}
+    
+    .item-corrected {
+      border-left-color: #555;
+      opacity: 0.5;
+    }
+    .item-corrected strong { text-decoration: line-through; color: #888; }
+
+    .mistake-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 6px;
+      transition: color 0.2s;
+    }
+    .btn-correct { color: #4caf50; }
+    .btn-correct:hover { color: #81c784; }
+    .btn-delete { color: #888; }
+    .btn-delete:hover { color: #ff4b4b; }
+
+    .empty-mistakes { font-size: 12px; color: #666; font-style: italic; }
+
+    /* Import / Export Panel (Top Right) */
+    .io-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 8px;
+      z-index: 250;
+      font-family: system-ui, sans-serif;
+    }
+
+    .io-btn {
+      background: rgba(15, 15, 15, 0.95);
+      border: 1px solid #333;
+      color: #d4af37;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .io-btn:hover {
+      background: #d4af37;
+      color: #000;
+      border-color: #d4af37;
+    }
+
+    /* Multi-step Context Menu */
+    .context-menu {
+      position: absolute;
+      background: rgba(20, 20, 20, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 6px;
+      min-width: 180px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: none;
+      font-family: system-ui, sans-serif;
+      direction: ltr;
+    }
+
+    .context-menu.active {
+      display: block;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .menu-title {
+      font-size: 11px;
+      color: #888;
+      padding: 4px 10px 8px;
+      border-bottom: 1px solid #333;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .menu-item {
+      padding: 10px 14px;
+      color: #eee;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .menu-item:hover { background: #333; color: #fff; }
+    .menu-item.danger:hover { background: #ff4b4b; }
+    
+    .menu-divider {
+      height: 1px;
+      background: #333;
+      margin: 6px 0;
+    }
+
+    /* Letter/Gap Picker inside Menu */
+    .letter-picker {
+      display: flex;
+      flex-direction: row-reverse;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 8px;
+      justify-content: center;
+      align-items: center;
+      font-family: 'quransamplefont', sans-serif;
+      font-size: 24px;
+    }
+    
+    .pick-letter {
+      background: #111;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pick-letter:hover {
+      background: #d4af37;
+      color: #000;
+      border-color: #d4af37;
+    }
+    .pick-letter.disabled {
+      pointer-events: none;
+      border-color: transparent;
+      background: transparent;
+      padding: 0 4px;
+    }
+
+    .pick-gap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 30px;
+      border-radius: 4px;
+      background: rgba(255, 75, 75, 0.15);
+      color: #ff4b4b;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: system-ui, sans-serif;
+      transition: all 0.2s;
+    }
+    .pick-gap:hover { background: #ff4b4b; color: #fff; }
+    .pick-gap::before { content: "+"; }
+
+    /* Existing mistakes inside menu */
+    .menu-existing-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    .menu-existing-item.corrected-text { opacity: 0.5; text-decoration: line-through; }
+    .existing-actions button { background: none; border:none; cursor: pointer; margin-left: 8px; }
+    .existing-actions button:hover { color: #fff; }
+
+    .loading { color: #666666; display: block; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <!-- Mistakes Tracker Sidebar -->
+  <div class="mistakes-panel" id="mistakes-panel">
+    <h3>
+      <span>Page <span id="panel-page-num"></span></span>
+      <span style="font-size:10px; color:#666; font-weight:normal;">Auto-Saved</span>
+    </h3>
+    <div id="mistakes-list">
+      <div class="empty-mistakes">No mistakes for this page.</div>
+    </div>
+  </div>
+
+  <!-- Import / Export Panel -->
+  <div class="io-panel">
+    <button class="io-btn" onclick="exportData()" title="Download all recorded mistakes as a JSON file">⭳ Export</button>
+    <button class="io-btn" onclick="triggerImport()" title="Load mistakes from a previously exported JSON file">⭱ Import</button>
+    <input type="file" id="import-file-input" accept="application/json" style="display:none" onchange="importData(event)">
+  </div>
+
+  <button id="next-btn" class="nav-arrow next" onclick="changePage(1)">&#8592;</button>
+  <button id="prev-btn" class="nav-arrow prev" onclick="changePage(-1)">&#8594;</button>
+
+  <div class="mushaf-wrapper">
+    <div class="top-controls">
+      <div id="page-num" class="page-number-toggle" onclick="toggleNumberFormat()"></div>
+    </div>
+    <div class="mushaf-frame">
+      <div class="mushaf-inner-frame">
+        <main id="quran-content">
+          <div class="quran-text"><span class="loading">Loading Page...</span></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Context Menu -->
+  <div id="context-menu" class="context-menu"></div>
+
+  <script>
+    const START_PAGE = 582;
+    const END_PAGE = 604;
+
+    const DB_STORAGE_KEY = 'quranMistakesDB';
+    const LAST_PAGE_KEY = 'quranLastPage';
+
+    // Restore the last page the user was on (if it's within the valid range),
+    // otherwise fall back to the starting page.
+    function loadLastPage() {
+      const saved = localStorage.getItem(LAST_PAGE_KEY);
+      if (saved !== null) {
+        const num = parseInt(saved, 10);
+        if (!isNaN(num) && num >= START_PAGE && num <= END_PAGE) return num;
+      }
+      return START_PAGE;
+    }
+
+    function savePageProgress() {
+      localStorage.setItem(LAST_PAGE_KEY, String(currentPage));
+    }
+
+    let currentPage = loadLastPage();
+    let useArabicNumerals = true;
+
+    // Load existing database from Local Storage, or create empty object if none exists
+    let mistakesDB = JSON.parse(localStorage.getItem(DB_STORAGE_KEY)) || {};
+
+    // Helper to save current state to Local Storage
+    function saveDatabase() {
+      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(mistakesDB));
+    }
+
+    const BISMILLAH_TEXT = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+
+    const MISTAKE_CATEGORIES = {
+      letter: ['Skipped Harakaat', 'Switched Harakaat', 'Skipped Letter', 'Switched Letter', 'Inserted Letter'],
+      word: ['Skipped Word', 'Switched Word'],
+      space: ['Added Word(s)', 'Wrong Continuation'],
+      marker: ['Skipped Ayah', 'Wrong Continuation']
+    };
+
+    function toArabicDigits(num) {
+      const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      return num.toString().replace(/\d/g, digit => arabicDigits[digit]);
+    }
+
+    function updatePageDisplay() {
+      const displayNum = useArabicNumerals ? toArabicDigits(currentPage) : currentPage;
+      document.getElementById('page-num').innerText = displayNum;
+      document.getElementById('panel-page-num').innerText = currentPage;
+    }
+
+    function toggleNumberFormat() {
+      useArabicNumerals = !useArabicNumerals;
+      updatePageDisplay();
+    }
+
+    // A monotonically increasing token used to guard against out-of-order async
+    // responses if the user flips pages faster than a fetch can resolve.
+    let loadRequestToken = 0;
+
+    async function loadPage(pageNumber) {
+      const requestId = ++loadRequestToken;
+      const container = document.getElementById('quran-content');
+      container.innerHTML = '<div class="quran-text"><span class="loading">↺</span></div>';
+      hideMenu();
+
+      try {
+        const response = await fetch(`https://api.quran.com/api/v4/verses/by_page/${pageNumber}?words=false&fields=text_indopak&chapter_number=true`);
+        const data = await response.json();
+
+        // A newer page request has started since this one was kicked off — discard this result.
+        if (requestId !== loadRequestToken) return;
+
+        // Build the page as a sequence of "segments". Each segment is either a Bismillah
+        // header, or a block of continuous verse text. Splitting on Bismillah headers (rather
+        // than treating the whole page as one flowing text block) means each text segment gets
+        // its own fresh copy of the lined background grid, starting at that segment's own top.
+        // Without this, the Bismillah header's height (which isn't a clean multiple of the
+        // line-height) would push all following lines out of sync with the repeating grid,
+        // causing the gray lines to drift and cut through the middle of words.
+        let segments = [];
+        let currentSegmentTokens = [];
+
+        function flushSegment() {
+          if (currentSegmentTokens.length > 0) {
+            segments.push({ type: 'text', tokens: currentSegmentTokens });
+            currentSegmentTokens = [];
+          }
+        }
+
+        data.verses.forEach(v => {
+          const chapterId = parseInt(v.verse_key.split(':')[0], 10);
+          if (v.verse_number === 1 && chapterId !== 1 && chapterId !== 9) {
+            flushSegment();
+            segments.push({ type: 'bismillah' });
+          }
+
+          // Add a visual gap before each new ayah, except at the very start of a segment
+          // (right after the page opens, or right after a Bismillah header) where a leading
+          // gap isn't wanted. This reuses the normal interactive space element, so this gap
+          // can also be flagged as a mistake (e.g. "Wrong Continuation") like any other space.
+          if (currentSegmentTokens.length > 0) {
+            const preSpaceId = `s-${v.verse_key}-pre`;
+            currentSegmentTokens.push(`<span class="q-space" data-id="${preSpaceId}" data-verse="${v.verse_key}" data-type="space">&nbsp;</span>`);
+          }
+
+          let cleanText = v.text_indopak
+            //.replace(/[\u06D5-\u06D9]/g, '')
+            //.replace(/[\u06E5-\u06E6]/g, '')
+            .replace('ۚۖ', 'ﵗ')
+            .replace(/\u06D9/g, '') //technically the "keep going" symbol, but showed up after each ayah...
+            .replace('ۖ', '') //another "keep going"
+            .replace(/\u06D5/g, '')
+            .replace(/\u06ED/g, 'ۣ')
+            .replace(/\u06CC/g, 'ى')
+            .replace(/\u06E4/g, '')
+            .replace('ڪَ', 'كَ')
+            .replace(/\u25CC/g, '')
+            //keep 8, A
+            .replace(/[\uE000-\uF8FF]/g, '')
+            .replace(/\u200F/g, '')
+            .replace(/ؕ/g, 'ۗ');
+
+          let words = cleanText.trim().split(/\s+/).filter(w => w.length > 0);
+
+          for (let i = 0; i < words.length; i++) {
+            let wordId = `w-${v.verse_key}-${i}`;
+            currentSegmentTokens.push(`<span class="q-word" data-id="${wordId}" data-verse="${v.verse_key}" data-type="word" data-raw="${words[i]}">${words[i]}</span>`);
+
+            if (i < words.length - 1) {
+              let spaceId = `s-${v.verse_key}-${i}`;
+              currentSegmentTokens.push(`<span class="q-space" data-id="${spaceId}" data-verse="${v.verse_key}" data-type="space">&nbsp;</span>`);
+            }
+          }
+
+          let markerId = `m-${v.verse_key}`;
+          currentSegmentTokens.push(`<span class="q-space" data-id="s-${v.verse_key}-end" data-verse="${v.verse_key}" data-type="space">&nbsp;</span>`);
+
+          // The circle glyph (U+06DD) has no unicode-mapped ligature to fuse with a digit,
+          // so the ayah number is rendered as its own overlay span, absolutely positioned
+          // on top of the circle via CSS (see .ayah-number). Numbers of 3+ digits get a
+          // tighter variant so they still fit inside the circle.
+          const arabicAyahNum = toArabicDigits(v.verse_number);
+          const numClass = arabicAyahNum.length > 2 ? 'ayah-number ayah-number-wide' : 'ayah-number';
+          currentSegmentTokens.push(`<span class="q-ayah-marker" data-id="${markerId}" data-verse="${v.verse_key}" data-type="marker">&#x06DD;<span class="${numClass}">${arabicAyahNum}</span></span>`);
+        });
+
+        flushSegment();
+
+        let html = '';
+        segments.forEach(seg => {
+          if (seg.type === 'bismillah') {
+            html += `<div class="bismillah-header">${BISMILLAH_TEXT}</div>`;
+          } else {
+            html += `<div class="quran-text">${seg.tokens.join('')}</div>`;
+          }
+        });
+
+        container.innerHTML = html;
+        updatePageDisplay();
+        document.getElementById('prev-btn').disabled = currentPage <= START_PAGE;
+        document.getElementById('next-btn').disabled = currentPage >= END_PAGE;
+        renderMistakes();
+
+      } catch (err) {
+        if (requestId !== loadRequestToken) return;
+        container.innerHTML = '<div class="quran-text"><span style="color:#ff6b6b; display:block; text-align:center;">Error loading page. Check internet.</span></div>';
+      }
+    }
+
+    function changePage(direction) {
+      const target = currentPage + direction;
+      if (target < START_PAGE || target > END_PAGE) return;
+      currentPage = target;
+      savePageProgress();
+      loadPage(currentPage);
+      window.scrollTo(0, 0);
+    }
+
+    // Keyboard navigation: the arrows on screen are placed by physical screen position
+    // (next = left side, prev = right side), so the keyboard mirrors that spatial layout
+    // rather than the logical RTL reading direction.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        changePage(1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        changePage(-1);
+      }
+    });
+
+    // Off-screen canvas used purely to measure rendered text width, so we can position an
+    // insertion-mark overlay line without ever splitting the actual Arabic text in the DOM.
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+
+    function getWordFont(el) {
+      const cs = getComputedStyle(el);
+      return `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    }
+
+    function measureTextWidth(text, font) {
+      measureCtx.font = font;
+      return measureCtx.measureText(text).width;
+    }
+
+    function splitWordIntoLetters(word) {
+      const letters = [];
+      for (let char of word) {
+        if (/[\u0610-\u061A\u064B-\u065F\u0670]/.test(char) && letters.length > 0) {
+          letters[letters.length - 1] += char;
+        } else {
+          letters.push(char);
+        }
+      }
+      return letters;
+    }
+
+    // Updated logMistake to support gapIndex
+    function logMistake(targetId, targetType, mistakeLevel, type, verseKey, text, letterIndex = null, gapIndex = null) {
+      if (!mistakesDB[currentPage]) mistakesDB[currentPage] = [];
+      mistakesDB[currentPage].push({
+        id: Date.now().toString(),
+        targetId, targetType, mistakeLevel, type, verseKey, letterIndex, gapIndex, text, corrected: false
+      });
+      
+      saveDatabase(); // Save to local storage
+      hideMenu();
+      renderMistakes();
+    }
+
+    function removeMistake(id, event) {
+      if(event) event.stopPropagation();
+      if (mistakesDB[currentPage]) {
+        mistakesDB[currentPage] = mistakesDB[currentPage].filter(m => m.id !== id);
+        saveDatabase(); // Save to local storage
+        renderMistakes();
+      }
+      hideMenu();
+    }
+
+    function markCorrected(id, event) {
+      if(event) event.stopPropagation();
+      if (mistakesDB[currentPage]) {
+        const mistake = mistakesDB[currentPage].find(m => m.id === id);
+        if (mistake) mistake.corrected = true;
+        saveDatabase(); // Save to local storage
+        renderMistakes();
+      }
+      hideMenu();
+    }
+
+    function renderMistakes() {
+      // Reset DOM
+      document.querySelectorAll('.q-word').forEach(el => {
+        el.className = 'q-word';
+        el.innerHTML = el.getAttribute('data-raw');
+      });
+      document.querySelectorAll('.q-space').forEach(el => el.className = 'q-space');
+      document.querySelectorAll('.q-ayah-marker').forEach(el => el.className = 'q-ayah-marker');
+
+      const pageMistakes = mistakesDB[currentPage] || [];
+      
+      // Only apply the red mistake styling for mistakes that are NOT corrected.
+      // A corrected mistake simply reverts to normal (default/white) text in the Quran view —
+      // it is not struck through or erased there, only in the sidebar list below.
+      pageMistakes.forEach(m => {
+        if (m.corrected) return;
+
+        if (m.mistakeLevel === 'ayah') {
+          document.querySelectorAll(`.q-word[data-verse="${m.verseKey}"]`).forEach(el => {
+            el.className += ` mistake-ayah`;
+          });
+        } 
+        else if (m.targetType === 'word' && m.mistakeLevel !== 'letter') {
+          const el = document.querySelector(`[data-id="${m.targetId}"]`);
+          if (el) el.className += ` mistake-word`;
+        }
+        else if (m.targetType === 'space') {
+          const el = document.querySelector(`[data-id="${m.targetId}"]`);
+          if (el) el.className += ` mistake-space`;
+        }
+        else if (m.targetType === 'marker') {
+          const el = document.querySelector(`[data-id="${m.targetId}"]`);
+          if (el) el.className += ` mistake-marker`;
+        }
+      });
+
+      // Complex rendering for letter/gap mistakes
+      const wordIds = [...new Set(pageMistakes.filter(m => m.mistakeLevel === 'letter').map(m => m.targetId))];
+      
+      wordIds.forEach(wordId => {
+        const el = document.querySelector(`[data-id="${wordId}"]`);
+        if (!el) return;
+        
+        const rawWord = el.getAttribute('data-raw');
+        const letters = splitWordIntoLetters(rawWord);
+        const lMistakes = pageMistakes.filter(m => m.targetId === wordId && m.mistakeLevel === 'letter');
+
+        // Build the word's text with ONLY letter-substitution mistakes applied. Gaps/insertions
+        // are deliberately left out of this markup entirely — the raw letter sequence stays
+        // one continuous run so Arabic joining forms render exactly as they naturally would.
+        let html = '';
+        for (let i = 0; i < letters.length; i++) {
+          const lMatch = lMistakes.find(m => m.letterIndex === i);
+          if (lMatch && !lMatch.corrected) {
+            html += `<span class="mistake-letter">${letters[i]}</span>`;
+          } else {
+            html += letters[i];
+          }
+        }
+        el.innerHTML = html;
+
+        // Now overlay thin red lines for any (uncorrected) inserted-letter mistakes. Each line's
+        // position is computed by measuring the rendered width of the letters before the gap,
+        // then placed that many pixels in from the word's right edge (words render right-to-left,
+        // so letter 0 sits at the right edge and later letters extend leftward).
+        const gapMistakes = lMistakes.filter(m => m.gapIndex !== null && !m.corrected);
+        if (gapMistakes.length > 0) {
+          const font = getWordFont(el);
+          gapMistakes.forEach(m => {
+            const precedingText = letters.slice(0, m.gapIndex).join('');
+            const offsetFromRight = measureTextWidth(precedingText, font);
+            const line = document.createElement('span');
+            line.className = 'mistake-insertion';
+            line.style.right = `${offsetFromRight}px`;
+            el.appendChild(line);
+          });
+        }
+      });
+
+      // Render Sidebar
+      const listContainer = document.getElementById('mistakes-list');
+      if (pageMistakes.length === 0) {
+        listContainer.innerHTML = '<div class="empty-mistakes">No mistakes for this page.</div>';
+        return;
+      }
+
+      const sortedMistakes = [...pageMistakes].sort((a, b) => a.corrected === b.corrected ? 0 : a.corrected ? 1 : -1);
+
+      listContainer.innerHTML = sortedMistakes.map(m => {
+        let displayCtx = m.text;
+        if (m.mistakeLevel === 'ayah') displayCtx = 'Entire Ayah ' + m.verseKey.split(':')[1];
+        else if (m.targetType === 'space') displayCtx = 'Between words';
+        else if (m.targetType === 'marker') displayCtx = 'Ayah End';
+        else if (m.gapIndex !== null) displayCtx = 'Extra letter gap';
+
+        return `
+          <div class="mistake-item ${m.corrected ? 'item-corrected' : ''}">
+            <div class="mistake-info" onclick="flashElement('${m.targetId}')">
+              <strong>${m.type}</strong>
+              <span class="mistake-text">${displayCtx}</span>
+            </div>
+            <div class="mistake-actions">
+              ${!m.corrected ? `<button class="btn-correct" title="Mark Corrected" onclick="markCorrected('${m.id}', event)">✓</button>` : ''}
+              <button class="btn-delete" title="Remove" onclick="removeMistake('${m.id}', event)">×</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function flashElement(id) {
+      const el = document.querySelector(`[data-id="${id}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.remove('flash-highlight');
+        void el.offsetWidth; 
+        el.classList.add('flash-highlight');
+      }
+    }
+
+    const contextMenu = document.getElementById('context-menu');
+    let currentCtxData = null;
+
+    contextMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    document.getElementById('quran-content').addEventListener('click', function(e) {
+      const target = e.target.closest('.q-word, .q-space, .q-ayah-marker');
+      if (!target) return;
+      e.stopPropagation();
+
+      currentCtxData = {
+        targetId: target.getAttribute('data-id'),
+        targetType: target.getAttribute('data-type'),
+        verseKey: target.getAttribute('data-verse'),
+        text: target.getAttribute('data-raw') || target.innerText.trim()
+      };
+
+      contextMenu.style.left = `${e.pageX + 10}px`;
+      contextMenu.style.top = `${e.pageY + 10}px`;
+      
+      if (currentCtxData.targetType === 'word') showMenu('word-initial');
+      else if (currentCtxData.targetType === 'space') showMenu('space-options');
+      else if (currentCtxData.targetType === 'marker') showMenu('marker-options');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!contextMenu.contains(e.target)) hideMenu();
+    });
+
+    function hideMenu() {
+      contextMenu.classList.remove('active');
+    }
+
+    function showMenu(state, extraData = {}) {
+      let html = '';
+      const existingMistakesHTML = getExistingMistakesHtml(currentCtxData.targetId);
+
+      if (state === 'word-initial') {
+        html += `<div class="menu-title">Select Mistake Level</div>`;
+        html += `<div class="menu-item" onclick="showMenu('word-options')">Word Mistake</div>`;
+        html += `<div class="menu-item" onclick="showMenu('letter-types')">Letter Mistake</div>`;
+        html += existingMistakesHTML;
+      } 
+      else if (state === 'word-options') {
+        html += `<div class="menu-title">Word Mistake</div>`;
+        MISTAKE_CATEGORIES.word.forEach(opt => {
+          html += `<div class="menu-item danger" onclick="logMistake('${currentCtxData.targetId}', 'word', 'word', '${opt}', '${currentCtxData.verseKey}', '${currentCtxData.text}')">${opt}</div>`;
+        });
+      }
+      else if (state === 'letter-types') {
+        // NEW WORKFLOW: Ask for the type of letter mistake first
+        html += `<div class="menu-title">Letter Mistake Type</div>`;
+        MISTAKE_CATEGORIES.letter.forEach(opt => {
+          if (opt === 'Inserted Letter') {
+            html += `<div class="menu-item danger" onclick="showMenu('letter-insert-select', { type: '${opt}' })">${opt}</div>`;
+          } else {
+            html += `<div class="menu-item danger" onclick="showMenu('letter-select', { type: '${opt}' })">${opt}</div>`;
+          }
+        });
+      }
+      else if (state === 'letter-select') {
+        // Normal letter mistakes (skipped, switched)
+        html += `<div class="menu-title">Select the Letter</div>`;
+        const letters = splitWordIntoLetters(currentCtxData.text);
+        html += `<div class="letter-picker">`;
+        letters.forEach((l, i) => {
+          html += `<span class="pick-letter" onclick="logMistake('${currentCtxData.targetId}', 'word', 'letter', '${extraData.type}', '${currentCtxData.verseKey}', '${l}', ${i}, null)">${l}</span>`;
+        });
+        html += `</div>`;
+      }
+      else if (state === 'letter-insert-select') {
+        // Inserted Letter workflow with Gaps
+        html += `<div class="menu-title">Where was it inserted?</div>`;
+        const letters = splitWordIntoLetters(currentCtxData.text);
+        html += `<div class="letter-picker">`;
+        
+        for (let i = 0; i <= letters.length; i++) {
+          html += `<span class="pick-gap" title="Insert space here" onclick="logMistake('${currentCtxData.targetId}', 'word', 'letter', '${extraData.type}', '${currentCtxData.verseKey}', 'Insertion', null, ${i})"></span>`;
+          if (i < letters.length) {
+            html += `<span class="pick-letter disabled">${letters[i]}</span>`;
+          }
+        }
+        
+        html += `</div>`;
+      }
+      else if (state === 'space-options') {
+        html += `<div class="menu-title">Between Words</div>`;
+        MISTAKE_CATEGORIES.space.forEach(opt => {
+          html += `<div class="menu-item danger" onclick="logMistake('${currentCtxData.targetId}', 'space', 'space', '${opt}', '${currentCtxData.verseKey}', 'Space')">${opt}</div>`;
+        });
+        html += existingMistakesHTML;
+      }
+      else if (state === 'marker-options') {
+        html += `<div class="menu-title">Ayah Mistake</div>`;
+        MISTAKE_CATEGORIES.marker.forEach(opt => {
+          const level = opt === 'Skipped Ayah' ? 'ayah' : 'marker';
+          html += `<div class="menu-item danger" onclick="logMistake('${currentCtxData.targetId}', 'marker', '${level}', '${opt}', '${currentCtxData.verseKey}', 'Ayah ${currentCtxData.verseKey.split(':')[1]}')">${opt}</div>`;
+        });
+        html += existingMistakesHTML;
+      }
+
+      contextMenu.innerHTML = html;
+      contextMenu.classList.add('active');
+    }
+
+    function getExistingMistakesHtml(targetId) {
+      if (!mistakesDB[currentPage]) return '';
+      const existing = mistakesDB[currentPage].filter(m => m.targetId === targetId);
+      if (existing.length === 0) return '';
+      
+      let html = `<div class="menu-divider"></div><div class="menu-title">Manage Mistakes Here</div>`;
+      existing.forEach(m => {
+        let specificText = '';
+        if (m.mistakeLevel === 'letter' && m.letterIndex !== null) specificText = ` (${m.text})`;
+        if (m.mistakeLevel === 'letter' && m.gapIndex !== null) specificText = ` (Extra space)`;
+
+        html += `
+          <div class="menu-existing-item ${m.corrected ? 'corrected-text' : ''}">
+            <div style="flex-grow:1; font-weight:bold">${m.type}${specificText}</div>
+            <div class="existing-actions">
+              ${!m.corrected ? `<button title="Corrected" style="color:#4caf50" onclick="markCorrected('${m.id}', event)">✓</button>` : ''}
+              <button title="Delete" style="color:#ff4b4b" onclick="removeMistake('${m.id}', event)">×</button>
+            </div>
+          </div>
+        `;
+      });
+      return html;
+    }
+
+    // ---------- Import / Export ----------
+
+    function exportData() {
+      const exportObj = {
+        exportedAt: new Date().toISOString(),
+        startPage: START_PAGE,
+        endPage: END_PAGE,
+        lastPage: currentPage,
+        mistakes: mistakesDB
+      };
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `qmt-mistakes-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function triggerImport() {
+      document.getElementById('import-file-input').click();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          // Support importing either a full export ({ mistakes: {...}, lastPage }) or a raw
+          // mistakes-by-page object directly.
+          const importedMistakes = (parsed && typeof parsed === 'object' && parsed.mistakes) ? parsed.mistakes : parsed;
+
+          if (!importedMistakes || typeof importedMistakes !== 'object' || Array.isArray(importedMistakes)) {
+            throw new Error('Invalid format');
+          }
+
+          // Merge at the page level: imported pages overwrite existing data for that same
+          // page, but pages not present in the import are left untouched.
+          mistakesDB = Object.assign({}, mistakesDB, importedMistakes);
+          saveDatabase();
+
+          if (parsed && parsed.lastPage) {
+            const num = parseInt(parsed.lastPage, 10);
+            if (!isNaN(num) && num >= START_PAGE && num <= END_PAGE) {
+              currentPage = num;
+              savePageProgress();
+            }
+          }
+
+          loadPage(currentPage);
+          alert('Import successful.');
+        } catch (err) {
+          alert('Failed to import: the selected file is not a valid QMT export.');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // allow re-importing the same file later if needed
+    }
+
+    loadPage(currentPage);
+
+    // The insertion-mark overlay lines are positioned using measured text width. If the custom
+    // Quran font is still loading at the moment of measurement, that measurement briefly uses a
+    // fallback font's metrics. Re-rendering once the real font is ready snaps any overlay lines
+    // to their correct position.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => renderMistakes());
+    }
+  </script>
+</body>
+</html>
