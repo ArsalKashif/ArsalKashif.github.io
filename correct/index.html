@@ -31,6 +31,12 @@
       padding: 40px 60px;
       position: relative;
       overflow-x: hidden;
+
+      background-image: url('blackgranite.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
 
     /* Outer Wrapper */
@@ -72,7 +78,7 @@
     .mushaf-inner-frame {
       border: 1px solid #443311;
       padding: 25px 20px;
-      background-color: #050505;
+      background-color: rgba(5, 5, 5, 0.90);
     }
 
     /* Inline Bismillah Header */
@@ -179,7 +185,6 @@
 
     .mistake-space {
       background-color: rgba(255, 75, 75, 0.4) !important;
-      min-width: 15px;
     }
 
     .mistake-marker {
@@ -554,6 +559,21 @@
       useArabicNumerals = !useArabicNumerals;
       updatePageDisplay();
     }
+
+    // Parallax background scrolling effect (jitter-free initialization)
+    function updateParallax() {
+      const scrolled = window.scrollY;
+      document.body.style.backgroundPositionY = `${scrolled * -0.1}px`;
+    }
+
+    // 1. Run immediately to set initial alignment
+    updateParallax();
+
+    // 2. Run on smooth scroll events
+    window.addEventListener('scroll', updateParallax, { passive: true });
+
+    // 3. Recalculate once images and custom fonts are fully loaded
+    window.addEventListener('load', updateParallax);
 
     // A monotonically increasing token used to guard against out-of-order async
     // responses if the user flips pages faster than a fetch can resolve.
