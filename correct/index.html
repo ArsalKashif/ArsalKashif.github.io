@@ -608,17 +608,25 @@
           let cleanText = v.text_indopak
             //.replace(/[\u06D5-\u06D9]/g, '')
             //.replace(/[\u06E5-\u06E6]/g, '')
+            //.replace(/[\uE000-\uF8FF]/g, '')
+            .replace('تُرٰبًا','تُرٰبًاۣ ')
             .replace('ۚۖ', 'ﵗ')
-            .replace(/\u06D9/g, '') //technically the "keep going" symbol, but showed up after each ayah...
-            .replace('ۖ', '') //another "keep going"
+            .replace(/\u06D9/g, '') //"keep going" #1
+            .replace('ۖ', '')        //"keep going" #2
             .replace(/\u06D5/g, '')
             .replace(/\u06ED/g, 'ۣ')
             .replace(/\u06CC/g, 'ى')
             .replace(/\u06E4/g, '')
             .replace('ڪَ', 'كَ')
             .replace(/\u25CC/g, '')
-            //keep 8, A
-            .replace(/[\uE000-\uF8FF]/g, '')
+
+            .replace('', '')
+            .replace('', '')
+            .replace('', '')
+            .replace('', '')
+            .replace('', '')
+            .replace('', '')
+            .replace('','ﵴ')
             .replace(/\u200F/g, '')
             .replace(/ؕ/g, 'ۗ');
 
